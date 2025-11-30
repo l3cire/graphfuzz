@@ -40,8 +40,8 @@ class MAXFVFuzzer(BaseFuzzer):
         save_graphs(generated_graphs, "maxfv_corpus")
         return load_graphs("maxfv_corpus")
 
-    def process_test_results(self, mutated_graph, tester, first_occurrence_times, total_bug_counts, timestamp):
-        discrepancies = tester.test_single_graph(mutated_graph)
+    def process_test_results(self, mutated_graph, tester: MAXFVTester, first_occurrence_times, total_bug_counts, timestamp):
+        discrepancies = tester.test(mutated_graph)
         if discrepancies:
             for discrepancy_message, graph in discrepancies.items():
                 if discrepancy_message not in first_occurrence_times:

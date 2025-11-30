@@ -7,20 +7,20 @@ import uuid
 NXGraph = Union[nx.Graph, nx.DiGraph]
 
 class BaseTester(ABC):
-    def __init__(self, discrepancy_filename: str):
+    def __init__(self, discrepancy_filename: str, id=None):
         self.corpus = []
         self.discrepancy_filename = discrepancy_filename
-        self.uuid = uuid.uuid4().hex[:8]
+        self.uuid = uuid.uuid4().hex[:8] if not id else id
         print(f'Bug file id: {self.uuid}')
 
     @abstractmethod
     def test(self, graph: NXGraph, timestamp: float, **kwargs):
         pass
 
-    def test_algorithms(self, graph: NXGraph, **kwargs) -> tuple[Optional[str], Optional[NXGraph]]:
+    def test_algorithms(self, graph: NXGraph, *args) -> tuple[Optional[str], Optional[NXGraph]]:
         results = {}
         for algo_name, algo_func in self.algorithms.items():
-            results[algo_name] = algo_func(graph, **kwargs)
+            results[algo_name] = algo_func(graph, *args)
 
         discrepancy_messages = []
         algo_names = list(self.algorithms.keys())
