@@ -1,9 +1,11 @@
+import math
+
 import networkx as nx
-from BaseFuzzer import BaseFuzzer
+
+from Fuzzer.BaseFuzzer import BaseFuzzer
 from Generator.SmokeGenerator import SmokeGenerator
 from Tester.MSTTester import MSTTester
 from Utils.FileUtils import create_single_node_graph, save_graphs, load_graphs
-import math
 
 
 class MSTFuzzer(BaseFuzzer):
@@ -26,8 +28,16 @@ class MSTFuzzer(BaseFuzzer):
         return [create_single_node_graph()]
 
     def create_multiple_graphs(self):
-        generator = SmokeGenerator(self.executor, n=30, m=2, directed=True, weighted=True,
-                                   negative_weights=True, negative_cycle=True, parallel_edges=False)
+        generator = SmokeGenerator(
+            self.executor,
+            n=30,
+            m=2,
+            directed=True,
+            weighted=True,
+            negative_weights=True,
+            negative_cycle=True,
+            parallel_edges=False,
+        )
         generated_graphs = generator.generate()
         save_graphs(generated_graphs, "mst_corpus")
         return load_graphs("mst_corpus")
@@ -35,9 +45,11 @@ class MSTFuzzer(BaseFuzzer):
     def mst_weight_interesting_check(self, result):
         """Custom feedback to check if MST weight is in a new bucket based on powers of 2, differentiated by num_nodes."""
         # Calculate total weight and the number of nodes in the MST
-        total_weight = sum(data.get('weight', 1) for u, v, data in result.edges(data=True))
+        total_weight = sum(
+            data.get("weight", 1) for u, v, data in result.edges(data=True)
+        )
         num_nodes = result.number_of_nodes()
-        
+
         # Special case for zero weight
         if total_weight == 0:
             bucket = f"{num_nodes}_0"
@@ -46,10 +58,10 @@ class MSTFuzzer(BaseFuzzer):
             abs_weight = abs(total_weight)
             exponent = math.floor(math.log2(abs_weight))
             bucket = f"{num_nodes}_{'-' if total_weight < 0 else ''}2^{exponent}"
-        
+
         # Use a tuple of (num_nodes, bucket) to check uniqueness
         unique_bucket = (num_nodes, bucket)
-        
+
         # Check if this bucket has been observed before
         if unique_bucket not in self.observed_buckets:
             self.observed_buckets.add(unique_bucket)
@@ -58,15 +70,28 @@ class MSTFuzzer(BaseFuzzer):
 
         return None  # No new bucket found
 
-    def process_test_results(self, mutated_graph, tester: MSTTester, first_occurrence_times, total_bug_counts, timestamp):
+    def process_test_results(
+        self,
+        mutated_graph,
+        tester: MSTTester,
+        first_occurrence_times,
+        total_bug_counts,
+        timestamp,
+    ):
         discrepancy_msg, _ = tester.test(mutated_graph)
         if discrepancy_msg:
             if discrepancy_msg not in first_occurrence_times:
                 first_occurrence_times[discrepancy_msg] = timestamp
-                print(f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start.")
-            total_bug_counts[discrepancy_msg] = total_bug_counts.get(discrepancy_msg, 0) + 1
+                print(
+                    f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start."
+                )
+            total_bug_counts[discrepancy_msg] = (
+                total_bug_counts.get(discrepancy_msg, 0) + 1
+            )
 
 
 if __name__ == "__main__":
-    mst_fuzzer = MSTFuzzer(num_iterations=100, use_multiple_graphs=True, feedback_check_type="regular")
+    mst_fuzzer = MSTFuzzer(
+        num_iterations=100, use_multiple_graphs=True, feedback_check_type="regular"
+    )
     mst_fuzzer.run()

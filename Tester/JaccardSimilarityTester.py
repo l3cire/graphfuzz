@@ -1,18 +1,15 @@
-import os
-import uuid
-
 import networkx as nx
-import igraph as ig
 
 from Tester.BaseTester import BaseTester
 from Utils.FileUtils import save_discrepancy
 from Utils.GraphConverter import GraphConverter
 
+
 class JaccardSimilarityTesterAlgorithms:
     @staticmethod
     def networkx(graph: nx.DiGraph):
         return list(nx.jaccard_coefficient(graph))
-    
+
     @staticmethod
     def igraph(graph: nx.DiGraph, pairs):
         converter = GraphConverter(graph)
@@ -21,12 +18,16 @@ class JaccardSimilarityTesterAlgorithms:
         if len(graph_ig.vs) == 0:
             vertex_id_map = {}
         else:
-            vertex_id_map = {str(node): idx for idx, node in enumerate(graph_ig.vs['name'])}
-        
+            vertex_id_map = {
+                str(node): idx for idx, node in enumerate(graph_ig.vs["name"])
+            }
+
         ig_jaccard_results = []
         for u, v in pairs:
             u_id, v_id = vertex_id_map[str(u)], vertex_id_map[str(v)]
-            ig_jaccard_score = graph_ig.similarity_jaccard(pairs=[(u_id, v_id)], loops=False)[0]
+            ig_jaccard_score = graph_ig.similarity_jaccard(
+                pairs=[(u_id, v_id)], loops=False
+            )[0]
             ig_jaccard_results.append((u, v, ig_jaccard_score))
 
         return ig_jaccard_results
@@ -41,16 +42,21 @@ class JaccardSimilarityTester(BaseTester):
         discrepancies = self.test_algorithms(G)
         if discrepancies:
             discrepancy_count = len(discrepancies)  # Count the discrepancies
-            discrepancy_msg = f"Results of NetworkX and iGraph are different for a graph!"
-            save_discrepancy((discrepancy_msg, G, timestamp),
-                             f"js_discrepancy_{self.uuid}.pkl")
+            discrepancy_msg = (
+                f"Results of NetworkX and iGraph are different for a graph!"
+            )
+            save_discrepancy(
+                (discrepancy_msg, G, timestamp), f"js_discrepancy_{self.uuid}.pkl"
+            )
             return discrepancy_msg, G, discrepancy_count
         return None, None, None
 
     def test_algorithms(self, G):
         """Test Jaccard similarity between networkx and igraph."""
         nx_jaccard = list(nx.jaccard_coefficient(G))
-        ig_jaccard = JaccardSimilarityTesterAlgorithms.igraph(G, [(u, v) for u, v, _ in nx_jaccard])
+        ig_jaccard = JaccardSimilarityTesterAlgorithms.igraph(
+            G, [(u, v) for u, v, _ in nx_jaccard]
+        )
 
         discrepancies = []
         for (u, v, nx_score), (_, _, ig_score) in zip(nx_jaccard, ig_jaccard):

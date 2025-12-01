@@ -1,10 +1,11 @@
 import time
 
 import networkx as nx
-from BaseFuzzer import BaseFuzzer
+
+from Fuzzer.BaseFuzzer import BaseFuzzer
 from Generator.CustomGenerator import CustomGenerator
 from Tester.MaxMatchingTester import MaxMatchingTester
-from Utils.FileUtils import create_single_node_digraph, save_graphs, load_graphs
+from Utils.FileUtils import save_graphs, load_graphs
 
 
 class MaxMatchingFuzzer(BaseFuzzer):
@@ -27,15 +28,28 @@ class MaxMatchingFuzzer(BaseFuzzer):
         save_graphs(generated_graphs, "max_matching_corpus")
         return load_graphs("max_matching_corpus")
 
-    def process_test_results(self, mutated_graph, tester: MaxMatchingTester, first_occurrence_times, total_bug_counts, timestamp):
+    def process_test_results(
+        self,
+        mutated_graph,
+        tester: MaxMatchingTester,
+        first_occurrence_times,
+        total_bug_counts,
+        timestamp,
+    ):
         discrepancy_msg, _ = tester.test(mutated_graph)
         if discrepancy_msg:
             if discrepancy_msg not in first_occurrence_times:
                 first_occurrence_times[discrepancy_msg] = time.time() - self.start_time
-                print(f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start.")
-            total_bug_counts[discrepancy_msg] = total_bug_counts.get(discrepancy_msg, 0) + 1
+                print(
+                    f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start."
+                )
+            total_bug_counts[discrepancy_msg] = (
+                total_bug_counts.get(discrepancy_msg, 0) + 1
+            )
 
 
 if __name__ == "__main__":
-    max_matching_fuzzer = MaxMatchingFuzzer(num_iterations=50, use_multiple_graphs=True, feedback_check_type="regular")
+    max_matching_fuzzer = MaxMatchingFuzzer(
+        num_iterations=50, use_multiple_graphs=True, feedback_check_type="regular"
+    )
     max_matching_fuzzer.run()

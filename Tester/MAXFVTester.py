@@ -1,10 +1,14 @@
-import os
 import random
-
-import networkx as nx
 from typing import Callable, Any
 
-from networkx.algorithms.flow import edmonds_karp, shortest_augmenting_path, dinitz, boykov_kolmogorov, preflow_push
+import networkx as nx
+from networkx.algorithms.flow import (
+    edmonds_karp,
+    shortest_augmenting_path,
+    dinitz,
+    boykov_kolmogorov,
+    preflow_push,
+)
 
 from Tester.BaseTester import BaseTester
 from Utils.FileUtils import save_discrepancies
@@ -14,35 +18,45 @@ from Utils.GraphConverter import GraphConverter
 class MAXFVTesterAlgorithms:
     @staticmethod
     def edmonds_karp(graph: nx.Graph, source, target):
-        return nx.maximum_flow_value(graph, source, target, flow_func=edmonds_karp, capacity='weight')
-    
+        return nx.maximum_flow_value(
+            graph, source, target, flow_func=edmonds_karp, capacity="weight"
+        )
+
     @staticmethod
     def shortest_augmenting_path(graph: nx.Graph, source, target):
-        return nx.maximum_flow_value(graph, source, target, flow_func=shortest_augmenting_path, capacity='weight')
-    
+        return nx.maximum_flow_value(
+            graph, source, target, flow_func=shortest_augmenting_path, capacity="weight"
+        )
+
     @staticmethod
     def dinitz(graph: nx.Graph, source, target):
-        return nx.maximum_flow_value(graph, source, target, flow_func=dinitz, capacity='weight')
-    
+        return nx.maximum_flow_value(
+            graph, source, target, flow_func=dinitz, capacity="weight"
+        )
+
     @staticmethod
     def boykov_kolmogorov(graph: nx.Graph, source, target):
-        return nx.maximum_flow_value(graph, source, target, flow_func=boykov_kolmogorov, capacity='weight')
-    
+        return nx.maximum_flow_value(
+            graph, source, target, flow_func=boykov_kolmogorov, capacity="weight"
+        )
+
     @staticmethod
     def preflow_push(graph: nx.Graph, source, target):
-        return nx.maximum_flow_value(graph, source, target, flow_func=preflow_push, capacity='weight')
-    
+        return nx.maximum_flow_value(
+            graph, source, target, flow_func=preflow_push, capacity="weight"
+        )
+
     @staticmethod
     def igraph(graph: nx.Graph, source, target):
         converter = GraphConverter(graph)
         G_ig = converter.to_igraph()
-        if 'weight' not in G_ig.es.attribute_names():
-            G_ig.es['weight'] = 1
+        if "weight" not in G_ig.es.attribute_names():
+            G_ig.es["weight"] = 1
         # Find iGraph indices for source and target
         source_ig = G_ig.vs.find(name=str(source)).index
         target_ig = G_ig.vs.find(name=str(target)).index
 
-        return G_ig.maxflow(source_ig, target_ig, capacity='weight').value
+        return G_ig.maxflow(source_ig, target_ig, capacity="weight").value
 
 
 class MAXFVTester(BaseTester):
@@ -50,12 +64,12 @@ class MAXFVTester(BaseTester):
     def __init__(self, discrepancy_filename="maxfv_corpus.pkl", id=None):
         super().__init__(discrepancy_filename)
         self.algorithms: dict[str, Callable[[nx.DiGraph, int, int], Any]] = {
-            'edmonds-karp': MAXFVTesterAlgorithms.edmonds_karp,
-            'shortest_augmenting_path': MAXFVTesterAlgorithms.shortest_augmenting_path,
-            'dinitz': MAXFVTesterAlgorithms.dinitz,
-            'boykov_kolmogorov': MAXFVTesterAlgorithms.boykov_kolmogorov,
-            'preflow_push': MAXFVTesterAlgorithms.preflow_push,
-            'igraph': MAXFVTesterAlgorithms.igraph
+            "edmonds-karp": MAXFVTesterAlgorithms.edmonds_karp,
+            "shortest_augmenting_path": MAXFVTesterAlgorithms.shortest_augmenting_path,
+            "dinitz": MAXFVTesterAlgorithms.dinitz,
+            "boykov_kolmogorov": MAXFVTesterAlgorithms.boykov_kolmogorov,
+            "preflow_push": MAXFVTesterAlgorithms.preflow_push,
+            "igraph": MAXFVTesterAlgorithms.igraph,
         }
 
     def test(self, G):
@@ -107,15 +121,21 @@ class MAXFVTester(BaseTester):
 
             # Consider top 10 and bottom 10 nodes
             top_10_nodes = sorted_nodes[:3] if len(sorted_nodes) >= 3 else sorted_nodes
-            bottom_10_nodes = sorted_nodes[-3:] if len(sorted_nodes) >= 3 else sorted_nodes
+            bottom_10_nodes = (
+                sorted_nodes[-3:] if len(sorted_nodes) >= 3 else sorted_nodes
+            )
 
             for source in top_10_nodes:
                 for target in bottom_10_nodes:
                     if source != target:
                         count += 1
-                        test_result, discrepancy_msg = self.test_maxfv_algorithms(G, source, target)
+                        test_result, discrepancy_msg = self.test_maxfv_algorithms(
+                            G, source, target
+                        )
                         if not test_result:
-                            discrepancy_counts[discrepancy_msg] = discrepancy_counts.get(discrepancy_msg, 0) + 1
+                            discrepancy_counts[discrepancy_msg] = (
+                                discrepancy_counts.get(discrepancy_msg, 0) + 1
+                            )
 
                             if discrepancy_counts[discrepancy_msg] <= 5:
                                 discrepancy_data.append((discrepancy_msg, G))
@@ -127,8 +147,7 @@ class MAXFVTester(BaseTester):
 
             # Print all the discrepancy messages and their counts
         for msg, count in discrepancy_counts.items():
-            print(f"Discrepancy message: \"{msg}\" occurred {count} times.")
+            print(f'Discrepancy message: "{msg}" occurred {count} times.')
 
         print("End of MAXFV testing.")
         return discrepancy_counts
-

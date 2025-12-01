@@ -1,9 +1,6 @@
-import os
-import uuid
 from itertools import permutations
 
 import networkx as nx
-import igraph as ig
 
 from Tester.BaseTester import BaseTester
 from Utils.FileUtils import save_discrepancy
@@ -17,12 +14,13 @@ class AdamicAdarTesterAlgorithms:
         all_pairs = list(permutations(nodes, 2))
         nx_pairs = nx.adamic_adar_index(graph, ebunch=all_pairs)
         return {(u, v): aa for u, v, aa in nx_pairs}
-    
+
     @staticmethod
     def igraph(graph: nx.DiGraph):
         converter = GraphConverter(graph)
         graph_ig = converter.to_igraph()
         return graph_ig.similarity_inverse_log_weighted(mode="all")
+
 
 class AdamicAdarTester(BaseTester):
 
@@ -33,9 +31,12 @@ class AdamicAdarTester(BaseTester):
         discrepancies = self.test_algorithms(G)
         if discrepancies and len(G.nodes) < 30:
             discrepancy_count = len(discrepancies)  # Count the discrepancies
-            discrepancy_msg = "Results of NetworkX and iGraph are different for a graph!"
-            save_discrepancy((discrepancy_msg, G, timestamp),
-                             f"aa_discrepancy_{self.uuid}.pkl")
+            discrepancy_msg = (
+                "Results of NetworkX and iGraph are different for a graph!"
+            )
+            save_discrepancy(
+                (discrepancy_msg, G, timestamp), f"aa_discrepancy_{self.uuid}.pkl"
+            )
             return discrepancy_msg, G, discrepancy_count
         return None, None, None
 
