@@ -36,8 +36,8 @@ class STPLFuzzer(BaseFuzzer):
         save_graphs(generated_graphs, "stpl_corpus")
         return load_graphs("stpl_corpus")
 
-    def process_test_results(self, mutated_graph, tester, first_occurrence_times, total_bug_counts, timestamp):
-        discrepancies = tester.test_single_graph(mutated_graph, timestamp, num_pairs=10)
+    def process_test_results(self, mutated_graph, tester: STPLTester, first_occurrence_times, total_bug_counts, timestamp):
+        discrepancies = tester.test(mutated_graph, timestamp, num_pairs=10)
         for discrepancy_msg, _ in discrepancies:
             if discrepancy_msg:
                 if discrepancy_msg not in first_occurrence_times:

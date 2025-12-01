@@ -12,16 +12,16 @@ class BaseTester(ABC):
         print(f'Bug file id: {self.uuid}')
 
     @abstractmethod
-    def test(self, graph: nx.Graph, timestamp: float, **kwargs):
+    def test(self, graph: nx.Graph, timestamp: float, *args, **kwargs):
         pass
 
-    def test_algorithms(self, graph: nx.Graph, *args) -> tuple[Optional[str], Optional[nx.Graph]]:
+    def test_algorithms(self, graph: nx.Graph, *args, exception_result=None) -> tuple[Optional[str], Optional[nx.Graph]]:
         results = {}
         for algo_name, algo_func in self.algorithms.items():
             try:
                 results[algo_name] = algo_func(graph, *args)
             except Exception:
-                results[algo_name] = None
+                results[algo_name] = exception_result
 
         discrepancy_messages = []
         algo_names = list(self.algorithms.keys())

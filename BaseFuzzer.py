@@ -96,7 +96,7 @@ class BaseFuzzer(ABC):
             raise ValueError(f"Unknown feedback check type: {self.feedback_check_type}")
 
     def default_interesting_check(self, result):
-        if isinstance(result, int):
+        if isinstance(result, int) or isinstance(result, float):
             return result
         elif isinstance(result, (list, set)):
             if all(isinstance(x, (set, frozenset)) for x in result):
