@@ -4,8 +4,6 @@ from typing import Union, Optional
 from Utils.FileUtils import save_discrepancies
 import uuid
 
-NXGraph = Union[nx.Graph, nx.DiGraph]
-
 class BaseTester(ABC):
     def __init__(self, discrepancy_filename: str, id=None):
         self.corpus = []
@@ -14,13 +12,16 @@ class BaseTester(ABC):
         print(f'Bug file id: {self.uuid}')
 
     @abstractmethod
-    def test(self, graph: NXGraph, timestamp: float, **kwargs):
+    def test(self, graph: nx.Graph, timestamp: float, **kwargs):
         pass
 
-    def test_algorithms(self, graph: NXGraph, *args) -> tuple[Optional[str], Optional[NXGraph]]:
+    def test_algorithms(self, graph: nx.Graph, *args) -> tuple[Optional[str], Optional[nx.Graph]]:
         results = {}
         for algo_name, algo_func in self.algorithms.items():
-            results[algo_name] = algo_func(graph, *args)
+            try:
+                results[algo_name] = algo_func(graph, *args)
+            except Exception:
+                results[algo_name] = None
 
         discrepancy_messages = []
         algo_names = list(self.algorithms.keys())
