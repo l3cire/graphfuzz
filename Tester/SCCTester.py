@@ -40,20 +40,13 @@ class SCCTesterAlgorithms:
 
 class SCCTester(BaseTester):
 
-    def __init__(self, discrepancy_filename="scc_discrepancy.pkl"):
-        super().__init__(discrepancy_filename)
+    def __init__(
+        self, corpus_path, discrepancy_filename="scc_discrepancy", *args, **kwargs
+    ):
+        super().__init__(corpus_path, discrepancy_filename, *args, **kwargs)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "default": SCCTesterAlgorithms.default,
             "recursive": SCCTesterAlgorithms.recursive,
             "kosaraju": SCCTesterAlgorithms.kosaraju,
             "igraph": SCCTesterAlgorithms.igraph,
         }
-
-    def test(self, graph: nx.DiGraph, timestamp):
-        discrepancy_msg, discrepancy_graph = self.test_algorithms(graph)
-        if discrepancy_msg:
-            save_discrepancy(
-                (discrepancy_msg, discrepancy_graph, timestamp),
-                f"scc_discrepancy_{self.uuid}.pkl",
-            )
-        return discrepancy_msg, discrepancy_graph

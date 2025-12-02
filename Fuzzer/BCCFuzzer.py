@@ -34,25 +34,6 @@ class BCCFuzzer(BaseFuzzer):
         save_graphs(generated_graphs, "bcc_corpus")
         return load_graphs("bcc_corpus")
 
-    def process_test_results(
-        self,
-        mutated_graph,
-        tester: BCCTester,
-        first_occurrence_times,
-        total_bug_counts,
-        timestamp,
-    ):
-        discrepancy_msg, _ = tester.test(mutated_graph, timestamp)
-        if discrepancy_msg:
-            if discrepancy_msg not in first_occurrence_times:
-                first_occurrence_times[discrepancy_msg] = timestamp
-                print(
-                    f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start."
-                )
-            total_bug_counts[discrepancy_msg] = (
-                total_bug_counts.get(discrepancy_msg, 0) + 1
-            )
-
 
 if __name__ == "__main__":
     bcc_fuzzer = BCCFuzzer(

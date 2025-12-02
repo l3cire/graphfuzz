@@ -53,15 +53,16 @@ class STPLTesterAlgorithms:
 
 
 class STPLTester(BaseTester):
+    def __init__(
+        self, coprus_path, discrepancy_filename="stpl_discrepancy", *args, **kwargs
+    ):
+        super().__init__(coprus_path, discrepancy_filename)
 
-    def __init__(self, corpus_filename="stpl_corpus.pkl"):
-        super().__init__(corpus_filename)
-
-    def test(self, G, timestamp, num_pairs=5):
-        total_discrepancies = []
+    def test(self, G, timestamp, num_pairs=10):
+        total_discrepancies = {}
 
         if len(G) < 2:
-            return []
+            return {}
 
         for _ in range(num_pairs):
             # # Get the degrees of all nodes and sort them in descending order
@@ -78,7 +79,7 @@ class STPLTester(BaseTester):
                     (discrepancy_msg, discrepancy_graph, timestamp),
                     f"stpl_discrepancy_{self.uuid}.pkl",
                 )
-                total_discrepancies.append((discrepancy_msg, discrepancy_graph))
+                total_discrepancies[discrepancy_msg] = discrepancy_graph
 
         return total_discrepancies
 

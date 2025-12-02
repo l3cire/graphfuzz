@@ -46,7 +46,9 @@ def save_discrepancy(discrepancy_data, file_path, max_discrepancies_per_msg=100)
             with open(discrepancy_file_path, "rb") as f:
                 existing_discrepancy_data = pickle.load(f)
         except EOFError:
-            print(f"Warning: File {discrepancy_file_path} was empty or corrupted. Starting a new file.")
+            print(
+                f"Warning: File {discrepancy_file_path} was empty or corrupted. Starting a new file."
+            )
 
     msg, graph, timestamp = discrepancy_data
     discrepancy_messages = [msg for msg, _, _ in existing_discrepancy_data]
@@ -68,7 +70,7 @@ def save_exception_graphs(exception_graphs, prefix):
         os.makedirs(log_dir)
     filename = f"{prefix}_exceptions.pkl"
     file_path = os.path.join(log_dir, filename)
-    with open(file_path, 'wb') as file:
+    with open(file_path, "wb") as file:
         pickle.dump(exception_graphs, file)
     print(f"Exception graphs saved to {file_path}")
 
@@ -159,7 +161,7 @@ def save_exception_graphs(exception_graphs, prefix):
 
 
 def count_lines_in_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         return sum(1 for line in file)
 
 
@@ -172,15 +174,17 @@ def update_coveragerc():
         """
 
     # Write to .coveragerc in current directory
-    coveragerc_path = os.path.join(os.getcwd(), '.coveragerc')
-    with open(coveragerc_path, 'w') as file:
+    coveragerc_path = os.path.join(os.getcwd(), ".coveragerc")
+    with open(coveragerc_path, "w") as file:
         file.write(coveragerc_content)
     print(f".coveragerc updated and saved in {os.getcwd()}")
 
 
 def save_graphs(graphs, file_name):
     # Ensure the Corpus_Data directory exists
-    corpus_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Corpus_Data')
+    corpus_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "Corpus_Data"
+    )
     if not os.path.exists(corpus_dir):
         os.makedirs(corpus_dir)
 
@@ -189,7 +193,7 @@ def save_graphs(graphs, file_name):
     # Check if the file already exists
     if not os.path.exists(file_path):
         # Save the graphs using pickle
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             pickle.dump(graphs, f)
         print(f"Saved graphs to {file_name}")
     else:
@@ -198,10 +202,12 @@ def save_graphs(graphs, file_name):
 
 def load_graphs(file_name):
     # The path to the Corpus_Data directory
-    corpus_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Corpus_Data')
+    corpus_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "Corpus_Data"
+    )
 
     # Load the graphs using pickle
-    with open(os.path.join(corpus_dir, file_name), 'rb') as f:
+    with open(os.path.join(corpus_dir, file_name), "rb") as f:
         graphs = pickle.load(f)
 
     return graphs
@@ -211,17 +217,18 @@ def create_single_node_graph():
     # Create an empty graph
     G = nx.Graph()
 
-    # Add a single node. 
+    # Add a single node.
     G.add_node(1)
 
     # Return the graph object
     return G
 
+
 def create_single_node_digraph():
     # Create an empty graph
     G = nx.DiGraph()
 
-    # Add a single node. 
+    # Add a single node.
     G.add_node(1)
 
     # Return the graph object

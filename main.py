@@ -1,30 +1,39 @@
 import argparse
-import importlib
 import os
 import sys
 import time
 import uuid
 
+from Fuzzer import (
+    AdamicAdarFuzzer,
+    BCCFuzzer,
+    HarmonicCentralityFuzzer,
+    JaccardSimilarityFuzzer,
+    MAXFVFuzzer,
+    MaxMatchingFuzzer,
+    MSTFuzzer,
+    SCCFuzzer,
+    STPLFuzzer,
+)
+from Fuzzer.BaseFuzzer import BaseFuzzer
 from Scheduler.RandomDiskScheduler import RandomDiskScheduler
 from Scheduler.RandomMemScheduler import RandomMemScheduler
 
 
-def get_fuzzer_class(fuzzer_name):
-    module_name = f"Fuzzer.{fuzzer_name}Fuzzer"
-    class_name = f"{fuzzer_name}Fuzzer"
-    try:
-        module = importlib.import_module(module_name)
-        fuzzer_class = getattr(module, class_name)
-        return fuzzer_class
-    except (ModuleNotFoundError, AttributeError) as e:
-        print(
-            f"Error: Could not find fuzzer class {class_name} in module {module_name}"
-        )
-        print(e)
-        return None
+fuzzers: dict[str, type[BaseFuzzer]] = {
+    "AdamicAdar": AdamicAdarFuzzer.AdamicAdarFuzzer,
+    "BCC": BCCFuzzer.BCCFuzzer,
+    "HarmonicCentrality": HarmonicCentralityFuzzer.HarmonicCentralityFuzzer,
+    "JaccardSimilarity": JaccardSimilarityFuzzer.JaccardSimilarityFuzzer,
+    "MAXFV": MAXFVFuzzer.MAXFVFuzzer,
+    "MaxMatching": MaxMatchingFuzzer.MaxMatchingFuzzer,
+    "MST": MSTFuzzer.MSTFuzzer,
+    "SCC": SCCFuzzer.SCCFuzzer,
+    "STPL": STPLFuzzer.STPLFuzzer,
+}
 
 
-def run_fuzzer(fuzzer, output_mode):
+def run_fuzzer(fuzzer: BaseFuzzer, output_mode: str):
     original_stdout = sys.stdout
     original_stderr = sys.stderr
 
@@ -60,18 +69,21 @@ def main():
     parser.add_argument(
         "fuzzer",
         type=str,
-        choices=[
-            "AdamicAdar",
-            "BCC",
-            "HarmonicCentrality",
-            "JaccardSimilarity",
-            "MAXFV",
-            "MaxMatching",
-            "MST",
-            "SCC",
-            "STPL",
-        ],
+        choices=list(fuzzers.keys()),
         help="The name of the fuzzer to run.",
+    )
+    parser.add_argument(
+        "--test_method",
+        type=str,
+        choices=["differential", "metamorphic"],
+        default="differential",
+        help="Testing method to use. If metamorphic if chosen, algorithm should be specified.",
+    )
+    parser.add_argument(
+        "--algorithm",
+        type=str,
+        default="",
+        help="Algorithm to test when using metamorphic tester.",
     )
     parser.add_argument(
         "--num_iterations",
@@ -125,9 +137,13 @@ def main():
 
     args = parser.parse_args()
 
-    fuzzer_class = get_fuzzer_class(args.fuzzer)
+    fuzzer_class = fuzzers.get(args.fuzzer)
     if fuzzer_class is None:
         print(f"Error: Fuzzer {args.fuzzer} could not be found.")
+        return
+
+    if args.test_method == "metamorphic" and args.algorithm == "":
+        print(f"Error: metamorphic testing is chosen, but no algorithm specified")
         return
 
     if args.scheduler == "mem":
@@ -143,6 +159,8 @@ def main():
         num_iterations=args.num_iterations,
         use_multiple_graphs=args.use_multiple_graphs,
         feedback_check_type=args.feedback_check_type,
+        test_method=args.test_method,
+        algorithm=(args.algorithm if args.algorithm != "" else None),
         scheduler=scheduler,
         timeout_duration=args.timeout,
     )

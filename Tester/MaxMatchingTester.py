@@ -40,19 +40,10 @@ class MaxMatchingTesterAlgorithms:
 
 class MaxMatchingTester(BaseTester):
 
-    def __init__(self, corpus_filename="max_matching_corpus.pkl"):
-        super().__init__(corpus_filename)
+    def __init__(self, corpus_path, discrepancy_filename="max_matching_discrepancy"):
+        super().__init__(corpus_path, discrepancy_filename)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "hopcroft_karp": MaxMatchingTesterAlgorithms.hopcroft_karp,
             "eppstein": MaxMatchingTesterAlgorithms.eppstein,
             "igraph": MaxMatchingTesterAlgorithms.igraph,
         }
-
-    def test(self, G):
-        discrepancy_msg, discrepancy_graph = self.test_algorithms(G)
-        if discrepancy_msg:
-            save_discrepancy(
-                (discrepancy_msg, discrepancy_graph),
-                f"max_matching_discrepancy_{self.uuid}.pkl",
-            )
-        return discrepancy_msg, discrepancy_graph

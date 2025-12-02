@@ -41,25 +41,6 @@ class AdamicAdarFuzzer(BaseFuzzer):
         save_graphs(generated_graphs, "aa_corpus")
         return load_graphs("aa_corpus")
 
-    def process_test_results(
-        self,
-        mutated_graph,
-        tester: AdamicAdarTester,
-        first_occurrence_times,
-        total_bug_counts,
-        timestamp,
-    ):
-        discrepancy_msg, _, discrepancy_count = tester.test(mutated_graph, timestamp)
-        if discrepancy_msg:
-            if discrepancy_msg not in first_occurrence_times:
-                first_occurrence_times[discrepancy_msg] = timestamp
-                print(
-                    f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start."
-                )
-            total_bug_counts[discrepancy_msg] = (
-                total_bug_counts.get(discrepancy_msg, 0) + discrepancy_count
-            )
-
 
 if __name__ == "__main__":
     aa_fuzzer = AdamicAdarFuzzer(
