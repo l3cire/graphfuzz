@@ -11,7 +11,7 @@ from networkx.algorithms.flow import (
 )
 
 from Tester.BaseTester import BaseTester
-from Utils.FileUtils import save_discrepancies
+from Utils.FileUtils import save_discrepancies, save_discrepancy
 from Utils.GraphConverter import GraphConverter
 
 
@@ -61,8 +61,8 @@ class MAXFVTesterAlgorithms:
 
 class MAXFVTester(BaseTester):
 
-    def __init__(self, discrepancy_filename="maxfv_corpus.pkl", id=None):
-        super().__init__(discrepancy_filename)
+    def __init__(self, corpus_path, discrepancy_filename="maxfv_discrepancy", id=None):
+        super().__init__(corpus_path, discrepancy_filename, id=id)
         self.algorithms: dict[str, Callable[[nx.DiGraph, int, int], Any]] = {
             "edmonds-karp": MAXFVTesterAlgorithms.edmonds_karp,
             "shortest_augmenting_path": MAXFVTesterAlgorithms.shortest_augmenting_path,
@@ -72,13 +72,10 @@ class MAXFVTester(BaseTester):
             "igraph": MAXFVTesterAlgorithms.igraph,
         }
 
-    def test(self, G):
-        discrepancies = self.run_maxfv_tests_multiple_times(G)
-        if discrepancies:
-            return discrepancies
-        return None
+    def test(self, G, timestamp):
+        return self.run_maxfv_tests_multiple_times(G, timestamp)
 
-    def run_maxfv_tests_multiple_times(self, G, num_runs=5):
+    def run_maxfv_tests_multiple_times(self, G, timestamp, num_runs=5):
         """Run the test_maxfv_algorithms function multiple times with different source-target pairs."""
         discrepancies = {}
 
@@ -101,6 +98,10 @@ class MAXFVTester(BaseTester):
                 # discrepancy_message = f"Source: {source}, Target: {target}, Discrepancy: {discrepancy}"
                 discrepancy_message = f"Discrepancy: {discrepancy}"
                 discrepancies[discrepancy_message] = graph
+                save_discrepancy(
+                    (discrepancy_message, graph, timestamp),
+                    f"maxfv_discrepancy_{self.uuid}.pkl",
+                )
 
         return discrepancies
 

@@ -24,26 +24,11 @@ class AdamicAdarTesterAlgorithms:
 
 class AdamicAdarTester(BaseTester):
 
-    def __init__(self, corpus_filename="aa_corpus.pkl"):
-        super().__init__(corpus_filename)
-
-    def test(self, G, timestamp):
-        discrepancies = self.test_algorithms(G)
-        if discrepancies and len(G.nodes) < 30:
-            discrepancy_count = len(discrepancies)  # Count the discrepancies
-            discrepancy_msg = (
-                "Results of NetworkX and iGraph are different for a graph!"
-            )
-            save_discrepancy(
-                (discrepancy_msg, G, timestamp), f"aa_discrepancy_{self.uuid}.pkl"
-            )
-            return discrepancy_msg, G, discrepancy_count
-        return None, None, None
+    def __init__(self, corpus_path, discrepancy_filename="aa_discrepancy"):
+        super().__init__(corpus_path, discrepancy_filename)
 
     def test_algorithms(self, G):
         """Test Adamic-Adar index between networkx and igraph."""
-
-        discrepancies = []
 
         nx_aa_dict = AdamicAdarTesterAlgorithms.networkx(G)
         ig_aa_matrix = AdamicAdarTesterAlgorithms.igraph(G)
@@ -56,9 +41,12 @@ class AdamicAdarTester(BaseTester):
                     nx_score = nx_aa_dict.get((node1, node2), 0)
 
                     if not self.approximately_equal(nx_score, ig_score):
-                        discrepancies.append(((node1, node2), nx_score, ig_score))
+                        discrepancy_msg = (
+                            f"Results of networkx and igraph are different for a graph!"
+                        )
+                        return discrepancy_msg, G
 
-        return discrepancies
+        return None, None
 
     @staticmethod
     def approximately_equal(a, b, tol=1e-3):

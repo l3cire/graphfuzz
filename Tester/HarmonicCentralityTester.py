@@ -37,47 +37,38 @@ class HarmonicCentralityTesterAlgorithms:
 
 class HarmonicCentralityTester(BaseTester):
 
-    def __init__(self, corpus_filename="hc_corpus.pkl"):
-        super().__init__(corpus_filename)
+    def __init__(self, corpus_path, discrepancy_filename="hc_discrepancy"):
+        super().__init__(corpus_path, discrepancy_filename)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "networkx": HarmonicCentralityTesterAlgorithms.networkx,
             "igraph": HarmonicCentralityTesterAlgorithms.igraph,
         }
 
-    def test(self, G):
-        discrepancies = self.test_algorithms(G)
-        if discrepancies:
-            discrepancy_count = len(discrepancies)  # Count the discrepancies
-            discrepancy_msg = (
-                f"Results of NetworkX and iGraph are different for a graph!"
-            )
-            save_discrepancy((discrepancy_msg, G), f"hc_discrepancy_{self.uuid}.pkl")
-            return discrepancy_msg, G, discrepancy_count
-        return None, None, None
-
     def test_algorithms(self, G):
         """Test harmonic centrality between networkx and igraph."""
 
         def contains_negative_or_nan_weight(graph):
-            for u, v, data in graph.edges(data=True):
+            for _, _, data in graph.edges(data=True):
                 weight = data.get("weight", 0)
                 if weight <= 0 or math.isnan(weight):
                     return True
             return False
 
         if contains_negative_or_nan_weight(G):
-            return []
+            return None, None
 
-        discrepancies = []
         nx_centrality_dict = self.algorithms["networkx"](G)
         ig_centrality_dict = self.algorithms["igraph"](G)
 
         for node, nx_score in nx_centrality_dict.items():
             ig_score = ig_centrality_dict.get(str(node))
             if ig_score is None or not self.approximately_equal(nx_score, ig_score):
-                discrepancies.append((node, nx_score, ig_score))
+                discrepancy_msg = (
+                    f"Results of networkx and igraph are different for a graph!"
+                )
+                return discrepancy_msg, G
 
-        return discrepancies
+        return None, None
 
     @staticmethod
     def approximately_equal(a, b, tol=1e-6):

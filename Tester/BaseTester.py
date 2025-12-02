@@ -4,19 +4,37 @@ import uuid
 
 import networkx as nx
 
-from Utils.FileUtils import save_discrepancies
+from Utils.FileUtils import save_discrepancies, save_discrepancy
 
 
 class BaseTester(ABC):
-    def __init__(self, discrepancy_filename: str, id=None):
+    def __init__(
+        self,
+        corpus_path: str,
+        discrepancy_filename: str,
+        id=None,
+        test_method="differential",
+        algorithm=None,
+    ):
         self.corpus = []
+        self.corpus_path = corpus_path
         self.discrepancy_filename = discrepancy_filename
         self.uuid = uuid.uuid4().hex[:8] if not id else id
+        self.test_method = test_method
+        self.algorithm = algorithm
         print(f"Bug file id: {self.uuid}")
 
-    @abstractmethod
-    def test(self, graph: nx.Graph, timestamp: float, *args, **kwargs):
-        pass
+    def test(
+        self, graph: nx.Graph, timestamp: float, *args, **kwargs
+    ) -> dict[str, nx.Graph]:
+        discrepancy_msg, discrepancy_graph = self.test_algorithms(graph)
+        if discrepancy_msg:
+            save_discrepancy(
+                (discrepancy_msg, discrepancy_graph, timestamp),
+                f"{self.discrepancy_filename}_{self.uuid}.pkl",
+            )
+            return {discrepancy_msg: discrepancy_graph}
+        return {}
 
     def test_algorithms(
         self, graph: nx.Graph, *args, exception_result=None

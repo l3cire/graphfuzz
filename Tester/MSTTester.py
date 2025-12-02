@@ -46,8 +46,8 @@ class MSTTesterAlgorithms:
 
 class MSTTester(BaseTester):
 
-    def __init__(self, discrepancy_filename="mst_corpus.pkl"):
-        super().__init__(discrepancy_filename)
+    def __init__(self, corpus_path, discrepancy_filename="mst_discrepancy"):
+        super().__init__(corpus_path, discrepancy_filename)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "kuskal": MSTTesterAlgorithms.kruskal,
             "prim": MSTTesterAlgorithms.prim,
@@ -64,11 +64,6 @@ class MSTTester(BaseTester):
                 if np.isnan(data.get("weight", 0)):
                     graph[u][v]["weight"] = 0
 
-    def test(self, G):
+    def test(self, G, timestamp):
         self.preprocess_weights(G)
-        discrepancy_msg, discrepancy_graph = self.test_algorithms(G)
-        if discrepancy_msg:
-            save_discrepancy(
-                (discrepancy_msg, discrepancy_graph), f"mst_discrepancy_{self.uuid}.pkl"
-            )
-        return discrepancy_msg, discrepancy_graph
+        return super().test(G, timestamp=timestamp)

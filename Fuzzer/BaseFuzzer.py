@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 
 import networkx as nx
 
+from Tester.BaseTester import BaseTester
 from Feedback.FeedbackTools import FeedbackTools
 from Mutator.ExtendedMutator import ExtendedMutator
 from Scheduler.RandomMemScheduler import RandomMemScheduler
@@ -20,6 +21,8 @@ class BaseFuzzer(ABC):
         num_iterations=60,
         use_multiple_graphs=False,
         feedback_check_type="regular",
+        test_method="differential",
+        algorithm=None,
         scheduler=None,
         timeout_duration=20,
     ):
@@ -45,6 +48,8 @@ class BaseFuzzer(ABC):
         self.stop_fuzzing = (
             threading.Event()
         )  # Use a threading event to handle stopping the fuzzing process
+        self.test_method = test_method
+        self.algorithm = algorithm
 
     def _timeout_handler(self, signum, frame):
         raise TimeoutError("Test execution exceeded the time limit")
@@ -184,11 +189,25 @@ class BaseFuzzer(ABC):
     def create_multiple_graphs(self):
         pass
 
-    @abstractmethod
     def process_test_results(
-        self, mutated_graph, tester, first_occurrence_times, total_bug_counts, timestamp
+        self,
+        mutated_graph,
+        tester: BaseTester,
+        first_occurrence_times,
+        total_bug_counts,
+        timestamp,
     ):
-        pass
+        discrepancies = tester.test(mutated_graph, timestamp)
+        for discrepancy_msg, _ in discrepancies.items():
+            if discrepancy_msg:
+                if discrepancy_msg not in first_occurrence_times:
+                    first_occurrence_times[discrepancy_msg] = timestamp
+                    print(
+                        f"Recorded first occurrence of '{discrepancy_msg}' at {first_occurrence_times[discrepancy_msg]} seconds since start."
+                    )
+                total_bug_counts[discrepancy_msg] = (
+                    total_bug_counts.get(discrepancy_msg, 0) + 1
+                )
 
     def signal_handler(self, sig, frame):
         print("Ctrl+C pressed, finalizing...")
@@ -221,7 +240,6 @@ class BaseFuzzer(ABC):
         generated_graphs = self.create_initial_graphs()
         print(f"Loaded {len(generated_graphs)} valid graphs.")
 
-        feedback_tool = self.feedback_tool
         scheduler = self.scheduler
         scheduler.add_to_corpus(generated_graphs)
         mutator = ExtendedMutator(scheduler)

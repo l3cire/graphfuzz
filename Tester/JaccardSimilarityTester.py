@@ -35,21 +35,8 @@ class JaccardSimilarityTesterAlgorithms:
 
 class JaccardSimilarityTester(BaseTester):
 
-    def __init__(self, corpus_filename="js_corpus.pkl"):
-        super().__init__(corpus_filename)
-
-    def test(self, G, timestamp):
-        discrepancies = self.test_algorithms(G)
-        if discrepancies:
-            discrepancy_count = len(discrepancies)  # Count the discrepancies
-            discrepancy_msg = (
-                f"Results of NetworkX and iGraph are different for a graph!"
-            )
-            save_discrepancy(
-                (discrepancy_msg, G, timestamp), f"js_discrepancy_{self.uuid}.pkl"
-            )
-            return discrepancy_msg, G, discrepancy_count
-        return None, None, None
+    def __init__(self, corpus_path, discrepancy_filename="js_discrepancy"):
+        super().__init__(corpus_path, discrepancy_filename)
 
     def test_algorithms(self, G):
         """Test Jaccard similarity between networkx and igraph."""
@@ -58,12 +45,14 @@ class JaccardSimilarityTester(BaseTester):
             G, [(u, v) for u, v, _ in nx_jaccard]
         )
 
-        discrepancies = []
         for (u, v, nx_score), (_, _, ig_score) in zip(nx_jaccard, ig_jaccard):
             if not self.approximately_equal(nx_score, ig_score):
-                discrepancies.append((u, v, nx_score, ig_score))
+                discrepancy_msg = (
+                    f"Results of networkx and igraph are different for a graph!"
+                )
+                return discrepancy_msg, G
 
-        return discrepancies
+        return None, None
 
     @staticmethod
     def approximately_equal(a, b, tol=1e-6):

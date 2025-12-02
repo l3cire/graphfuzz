@@ -24,18 +24,9 @@ class BCCTesterAlgorithms:
 
 class BCCTester(BaseTester):
 
-    def __init__(self, corpus_filename="bcc_corpus.pkl"):
-        super().__init__(corpus_filename)
+    def __init__(self, corpus_path, discrepancy_filename="bcc_discrepancy"):
+        super().__init__(corpus_path, discrepancy_filename)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "networkx": BCCTesterAlgorithms.networkx,
             "igraph": BCCTesterAlgorithms.igraph,
         }
-
-    def test(self, G, timestamp):
-        discrepancy_msg, discrepancy_graph = self.test_algorithms(G)
-        if discrepancy_msg:
-            save_discrepancy(
-                (discrepancy_msg, discrepancy_graph, timestamp),
-                f"bcc_discrepancy_{self.uuid}.pkl",
-            )
-        return discrepancy_msg, discrepancy_graph

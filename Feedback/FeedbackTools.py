@@ -10,6 +10,7 @@ import networkx as nx
 import threading
 from multiprocessing import Lock
 
+
 def get_executed_lines(cov):
     """Retrieve executed lines from coverage data."""
     executed_lines = set()
@@ -19,6 +20,7 @@ def get_executed_lines(cov):
             for line in lines:
                 executed_lines.add((filename, line))
     return executed_lines
+
 
 def get_executed_branches(cov):
     """Retrieve executed branches (arcs) from coverage data."""
@@ -30,8 +32,9 @@ def get_executed_branches(cov):
                 executed_branches.add((filename, arc))
     return executed_branches
 
+
 def get_branch_coverage(cov):
-    """Retrieve and count the coverage of each branch (arc) in the code. Does not natively provide hit counts for branches """
+    """Retrieve and count the coverage of each branch (arc) in the code. Does not natively provide hit counts for branches"""
     branch_coverage = {}
     for filename in cov.get_data().measured_files():
         file_arcs = cov.get_data().arcs(filename)  # Arcs represent branches
@@ -40,10 +43,15 @@ def get_branch_coverage(cov):
             for arc in file_arcs:
                 from_line, to_line = arc
                 if (filename, from_line, to_line) in branch_coverage:
-                    branch_coverage[(filename, from_line, to_line)] += 1  # Increment hit count
+                    branch_coverage[
+                        (filename, from_line, to_line)
+                    ] += 1  # Increment hit count
                 else:
-                    branch_coverage[(filename, from_line, to_line)] = 1  # Initialize hit count
+                    branch_coverage[(filename, from_line, to_line)] = (
+                        1  # Initialize hit count
+                    )
     return branch_coverage
+
 
 def track_branch_coverage(algorithm, graph):
     """Run the algorithm on the graph and track branch coverage."""
@@ -67,7 +75,9 @@ def track_branch_coverage(algorithm, graph):
 
     # Output the branch coverage information
     for (filename, from_line, to_line), hit_count in branch_coverage.items():
-        print(f"Branch from line {from_line} to {to_line} in {filename} was hit {hit_count} time(s)")
+        print(
+            f"Branch from line {from_line} to {to_line} in {filename} was hit {hit_count} time(s)"
+        )
 
     return branch_coverage
 
@@ -77,60 +87,72 @@ class FeedbackTools:
         self.observed_outputs = set()
         self.networkx_exceptions = set()
         self.other_exceptions = set()
-        self.exception_graphs = {}  # Dictionary to store graphs and their corresponding exceptions
+        self.exception_graphs = (
+            {}
+        )  # Dictionary to store graphs and their corresponding exceptions
         self.line_counts = line_counts
         self.total_lines = set()
         self.start_time = start_time
         self.observed_executed_lines = set()  # Tracks executed lines of code
         self.observed_branches = set()  # Tracks branches that have been covered
-        self.lock = lock or Lock()  # Use a shared lock or create a new one for single instance
+        self.lock = (
+            lock or Lock()
+        )  # Use a shared lock or create a new one for single instance
 
     def is_new_and_interesting(self, graph, algorithm, check_func):
         try:
             # Run the algorithm on the graph
             result = algorithm(graph)
-            
+
             # Check if the result is interesting
             interesting_result = check_func(result)
-            
+
             # If it's new and hasn't been observed yet
             if interesting_result not in self.observed_outputs:
                 self.observed_outputs.add(interesting_result)
                 return True
-            
+
             return False
-        
+
         except nx.NetworkXException as e:
             # Handle NetworkX-specific exceptions
             exception_message = "NetworkX Error: " + str(e)
             if exception_message not in self.networkx_exceptions:
                 self.networkx_exceptions.add(exception_message)
                 self.exception_graphs[graph] = exception_message
-                return True  # Treat this as a new "interesting" result by returning True
-        
+                return (
+                    True  # Treat this as a new "interesting" result by returning True
+                )
+
         except Exception as e:
             # Handle any other general exceptions
             exception_message = "Error: " + str(e)
             if exception_message not in self.other_exceptions:
                 self.other_exceptions.add(exception_message)
                 self.exception_graphs[graph] = exception_message
-                return True  # Treat this as a new "interesting" result by returning True
-        
+                return (
+                    True  # Treat this as a new "interesting" result by returning True
+                )
+
         return False
 
     def parse_missing_lines(self, report_content):
         missing_lines = set()
         current_file_index = 0
         total_lines_previous_files = 0
-        for line in report_content.split('\n'):
-            match = re.search(r'\b\d+%.*?(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)', line)
+        for line in report_content.split("\n"):
+            match = re.search(r"\b\d+%.*?(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)", line)
             if match:
-                ranges = match.group(1).split(',')
+                ranges = match.group(1).split(",")
                 for r in ranges:
-                    if '-' in r:
-                        start, end = map(int, r.split('-'))
+                    if "-" in r:
+                        start, end = map(int, r.split("-"))
                         missing_lines.update(
-                            range(start + total_lines_previous_files, end + total_lines_previous_files + 1))
+                            range(
+                                start + total_lines_previous_files,
+                                end + total_lines_previous_files + 1,
+                            )
+                        )
                     else:
                         missing_lines.add(int(r) + total_lines_previous_files)
                 current_file_index += 1
@@ -139,7 +161,9 @@ class FeedbackTools:
 
     def check_coverage(self, report_content):
         # Extract total coverage rate
-        coverage_data_match = re.search(r'TOTAL\s+(\d+)\s+(\d+)\s+(\d+)%', report_content)
+        coverage_data_match = re.search(
+            r"TOTAL\s+(\d+)\s+(\d+)\s+(\d+)%", report_content
+        )
         if coverage_data_match:
             total_statements = int(coverage_data_match.group(1))
             missed_statements = int(coverage_data_match.group(2))
@@ -154,15 +178,17 @@ class FeedbackTools:
             return None, None, None
 
     def load_coverage_data(self, file_path):
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             return json.load(file)
 
     def compare_coverage(self, old_coverage, new_coverage):
         new_lines_covered = {}
 
-        for filename in new_coverage['files']:
-            old_lines = old_coverage['files'].get(filename, {}).get('executed_lines', [])
-            new_lines = new_coverage['files'][filename]['executed_lines']
+        for filename in new_coverage["files"]:
+            old_lines = (
+                old_coverage["files"].get(filename, {}).get("executed_lines", [])
+            )
+            new_lines = new_coverage["files"][filename]["executed_lines"]
 
             # Find the difference
             newly_covered = list(set(new_lines) - set(old_lines))
@@ -175,7 +201,7 @@ class FeedbackTools:
     def is_new_and_interesting_coverage_updated(self, graph, algorithm):
         with self.lock:  # Acquire the lock
             # Create a Coverage object with the instance-specific coverage file
-            cov = coverage.Coverage(config_file='.coveragerc')
+            cov = coverage.Coverage(config_file=".coveragerc")
             cov.erase()
 
             # Start coverage measurement
@@ -211,7 +237,9 @@ class FeedbackTools:
                 current_executed_lines = get_executed_lines(cov)
 
                 # Determine if there are new executed lines
-                new_executed_lines = current_executed_lines - self.observed_executed_lines
+                new_executed_lines = (
+                    current_executed_lines - self.observed_executed_lines
+                )
                 if new_executed_lines:
                     self.observed_executed_lines.update(new_executed_lines)
                     print(f"{len(new_executed_lines)}, {time.time() - self.start_time}")
@@ -223,7 +251,7 @@ class FeedbackTools:
     def is_new_and_interesting_coverage(self, graph, algorithm):
         try:
             # Create a Coverage object with configurations from .coveragerc
-            cov = coverage.Coverage(config_file='.coveragerc')
+            cov = coverage.Coverage(config_file=".coveragerc")
             cov.erase()
 
             # Start coverage measurement
@@ -231,6 +259,7 @@ class FeedbackTools:
 
             # Now import networkx
             import networkx as nx
+
             nx = importlib.reload(nx)
 
             result = algorithm(graph)
@@ -253,7 +282,9 @@ class FeedbackTools:
             cov.report(show_missing=True, file=buffer)
             buffer.seek(0)
             report_content = buffer.getvalue()
-            total_coverage_rate, _, current_missing_lines = self.check_coverage(report_content)
+            total_coverage_rate, _, current_missing_lines = self.check_coverage(
+                report_content
+            )
 
             # Calculate currently covered lines
             all_possible_lines = set(range(1, sum(self.line_counts) + 1))
@@ -281,7 +312,6 @@ class FeedbackTools:
                 self.other_exceptions.add(exception_message)
                 self.exception_graphs[graph] = exception_message
             return False
-
 
     def is_new_branch_triggered(self, graph, algorithm):
         """Track branch coverage and check if any new branches are triggered."""
@@ -326,11 +356,12 @@ class FeedbackTools:
                     self.observed_branches.update(new_branches)
 
                     # Print and log new branches triggered
-                    print(f"Total new branches executed: {len(new_branches)}, Time: {time.time() - self.start_time}")
+                    print(
+                        f"Total new branches executed: {len(new_branches)}, Time: {time.time() - self.start_time}"
+                    )
                     return True  # New branches are triggered
 
             return False  # No new branches were triggered
-
 
 
 # Example function that runs the algorithm
