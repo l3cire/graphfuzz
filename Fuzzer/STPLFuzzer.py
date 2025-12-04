@@ -27,7 +27,9 @@ class STPLFuzzer(BaseFuzzer):
             return float("inf")  # Return infinity if no path exists
 
     def get_tester(self):
-        return STPLTester(self.corpus_path)
+        return STPLTester(
+            self.corpus_path, test_method=self.test_method, algorithm=self.algorithm
+        )
 
     def create_single_graph(self):
         return [create_single_node_digraph()]

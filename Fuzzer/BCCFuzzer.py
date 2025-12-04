@@ -14,7 +14,9 @@ class BCCFuzzer(BaseFuzzer):
         return list(nx.biconnected_components(G))
 
     def get_tester(self):
-        return BCCTester(self.corpus_path)
+        return BCCTester(
+            self.corpus_path, test_method=self.test_method, algorithm=self.algorithm
+        )
 
     def create_single_graph(self):
         return [create_single_node_graph()]

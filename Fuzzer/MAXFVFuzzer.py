@@ -33,7 +33,12 @@ class MAXFVFuzzer(BaseFuzzer):
         return nx.maximum_flow_value(G, s, t, capacity="weight")
 
     def get_tester(self):
-        return MAXFVTester(self.corpus_path, id=self.uuid)
+        return MAXFVTester(
+            self.corpus_path,
+            id=self.uuid,
+            test_method=self.test_method,
+            algorithm=self.algorithm,
+        )
 
     def create_single_graph(self):
         return [create_single_node_graph()]

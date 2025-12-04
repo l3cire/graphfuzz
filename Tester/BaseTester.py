@@ -1,10 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import TypeVar, Optional, Any, Callable
 import uuid
 
 import networkx as nx
 
 from Utils.FileUtils import save_discrepancies, save_discrepancy
+
+T = TypeVar("T")
+
+
+class MetamorphicMutator(ABC):
+    @abstractmethod
+    def mutate(
+        self, graph: nx.Graph, input: Any, result: T
+    ) -> tuple[nx.Graph, Any, Callable[[T], bool]]:
+        pass
 
 
 class BaseTester(ABC):
@@ -13,8 +23,8 @@ class BaseTester(ABC):
         corpus_path: str,
         discrepancy_filename: str,
         id=None,
-        test_method="differential",
-        algorithm=None,
+        test_method: str = "differential",
+        algorithm: str = None,
     ):
         self.corpus = []
         self.corpus_path = corpus_path
@@ -22,12 +32,28 @@ class BaseTester(ABC):
         self.uuid = uuid.uuid4().hex[:8] if not id else id
         self.test_method = test_method
         self.algorithm = algorithm
+        self.algorithms: dict[str, Callable] = {}
         print(f"Bug file id: {self.uuid}")
+
+    @staticmethod
+    @abstractmethod
+    def get_metamorphic_mutator() -> MetamorphicMutator:
+        pass
 
     def test(
         self, graph: nx.Graph, timestamp: float, *args, **kwargs
     ) -> dict[str, nx.Graph]:
-        discrepancy_msg, discrepancy_graph = self.test_algorithms(graph)
+        if self.test_method == "differential":
+            discrepancy_msg, discrepancy_graph = self.test_algorithms(graph)
+        elif self.test_method == "metamorphic":
+            alg = self.algorithms.get(self.algorithm, None)
+            if alg is None:
+                message = f"Incorrect algorithm name provided: {self.algorithm}"
+                return {message: graph}
+            discrepancy_msg, discrepancy_graph = self.test_metamorphic(
+                graph, alg, *args
+            )
+
         if discrepancy_msg:
             save_discrepancy(
                 (discrepancy_msg, discrepancy_graph, timestamp),
@@ -35,6 +61,25 @@ class BaseTester(ABC):
             )
             return {discrepancy_msg: discrepancy_graph}
         return {}
+
+    def test_metamorphic(
+        self,
+        graph: nx.Graph,
+        alg: Callable,
+        *args,
+        n_tries=10,
+    ) -> tuple[Optional[str], Optional[nx.Graph]]:
+        orig_result = alg(graph, *args)
+        mutator: MetamorphicMutator = self.get_metamorphic_mutator()
+        for _ in range(n_tries):
+            new_graph, new_args, checker = mutator.mutate(graph, args, orig_result)
+            new_result = alg(new_graph, *new_args)
+            if not checker(new_result):
+                discrepancy_msg = (
+                    f"Resutls for a graph and its mutation are inconsistent!"
+                )
+                return (discrepancy_msg, graph)
+        return None, None
 
     def test_algorithms(
         self, graph: nx.Graph, *args, exception_result=None

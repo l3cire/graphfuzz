@@ -22,7 +22,9 @@ class MSTFuzzer(BaseFuzzer):
         return nx.minimum_spanning_tree(G)
 
     def get_tester(self):
-        return MSTTester(self.corpus_path)
+        return MSTTester(
+            self.corpus_path, test_method=self.test_method, algorithm=self.algorithm
+        )
 
     def create_single_graph(self):
         return [create_single_node_graph()]

@@ -35,8 +35,10 @@ class JaccardSimilarityTesterAlgorithms:
 
 class JaccardSimilarityTester(BaseTester):
 
-    def __init__(self, corpus_path, discrepancy_filename="js_discrepancy"):
-        super().__init__(corpus_path, discrepancy_filename)
+    def __init__(
+        self, corpus_path, discrepancy_filename="js_discrepancy", *args, **kwargs
+    ):
+        super().__init__(corpus_path, discrepancy_filename, *args, **kwargs)
 
     def test_algorithms(self, G):
         """Test Jaccard similarity between networkx and igraph."""

@@ -56,7 +56,13 @@ class STPLTester(BaseTester):
     def __init__(
         self, coprus_path, discrepancy_filename="stpl_discrepancy", *args, **kwargs
     ):
-        super().__init__(coprus_path, discrepancy_filename)
+        super().__init__(coprus_path, discrepancy_filename, *args, **kwargs)
+        self.algorithms = {
+            "bellman_ford_path_length": STPLTesterAlgorithms.bellman_ford_path_length,
+            "goldberg_radzik": STPLTesterAlgorithms.goldberg_radzik,
+            "dijkstra_path_length": STPLTesterAlgorithms.dijkstra_path_length,
+            "igraph": STPLTesterAlgorithms.igraph,
+        }
 
     def test(self, G, timestamp, num_pairs=10):
         total_discrepancies = {}

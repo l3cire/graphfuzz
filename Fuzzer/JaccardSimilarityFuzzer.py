@@ -14,7 +14,9 @@ class JaccardSimilarityFuzzer(BaseFuzzer):
         return list(nx.jaccard_coefficient(G))
 
     def get_tester(self):
-        return JaccardSimilarityTester(self.corpus_path)
+        return JaccardSimilarityTester(
+            self.corpus_path, test_method=self.test_method, algorithm=self.algorithm
+        )
 
     def create_single_graph(self):
         return [create_single_node_graph()]
