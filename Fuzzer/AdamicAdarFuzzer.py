@@ -21,7 +21,9 @@ class AdamicAdarFuzzer(BaseFuzzer):
         return list(nx.adamic_adar_index(G))
 
     def get_tester(self):
-        return AdamicAdarTester(self.corpus_path)
+        return AdamicAdarTester(
+            self.corpus_path, test_method=self.test_method, algorithm=self.algorithm
+        )
 
     def create_single_graph(self):
         return [create_single_node_graph()]

@@ -61,8 +61,10 @@ class MAXFVTesterAlgorithms:
 
 class MAXFVTester(BaseTester):
 
-    def __init__(self, corpus_path, discrepancy_filename="maxfv_discrepancy", id=None):
-        super().__init__(corpus_path, discrepancy_filename, id=id)
+    def __init__(
+        self, corpus_path, discrepancy_filename="maxfv_discrepancy", *args, **kwargs
+    ):
+        super().__init__(corpus_path, discrepancy_filename, *args, **kwargs)
         self.algorithms: dict[str, Callable[[nx.DiGraph, int, int], Any]] = {
             "edmonds-karp": MAXFVTesterAlgorithms.edmonds_karp,
             "shortest_augmenting_path": MAXFVTesterAlgorithms.shortest_augmenting_path,

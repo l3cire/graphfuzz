@@ -37,8 +37,10 @@ class HarmonicCentralityTesterAlgorithms:
 
 class HarmonicCentralityTester(BaseTester):
 
-    def __init__(self, corpus_path, discrepancy_filename="hc_discrepancy"):
-        super().__init__(corpus_path, discrepancy_filename)
+    def __init__(
+        self, corpus_path, discrepancy_filename="hc_discrepancy", *args, **kwargs
+    ):
+        super().__init__(corpus_path, discrepancy_filename, *args, **kwargs)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "networkx": HarmonicCentralityTesterAlgorithms.networkx,
             "igraph": HarmonicCentralityTesterAlgorithms.igraph,

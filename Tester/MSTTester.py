@@ -46,8 +46,10 @@ class MSTTesterAlgorithms:
 
 class MSTTester(BaseTester):
 
-    def __init__(self, corpus_path, discrepancy_filename="mst_discrepancy"):
-        super().__init__(corpus_path, discrepancy_filename)
+    def __init__(
+        self, corpus_path, discrepancy_filename="mst_discrepancy", *args, **kwargs
+    ):
+        super().__init__(corpus_path, discrepancy_filename, *args, **kwargs)
         self.algorithms: dict[str, Callable[[nx.DiGraph], Any]] = {
             "kuskal": MSTTesterAlgorithms.kruskal,
             "prim": MSTTesterAlgorithms.prim,
