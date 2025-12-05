@@ -9,7 +9,7 @@ from Utils.FileUtils import save_discrepancies, save_discrepancy
 T = TypeVar("T")
 
 
-class MetamorphicMutator(ABC):
+class TestMetamorphism(ABC):
     @abstractmethod
     def mutate(
         self, graph: nx.Graph, input: Any, result: T
@@ -37,7 +37,7 @@ class BaseTester(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_metamorphic_mutator() -> MetamorphicMutator:
+    def get_test_metamorphism() -> TestMetamorphism:
         pass
 
     def test(
@@ -70,7 +70,7 @@ class BaseTester(ABC):
         n_tries=10,
     ) -> tuple[Optional[str], Optional[nx.Graph]]:
         orig_result = alg(graph, *args)
-        mutator: MetamorphicMutator = self.get_metamorphic_mutator()
+        mutator: TestMetamorphism = self.get_test_metamorphism()
         for _ in range(n_tries):
             new_graph, new_args, checker = mutator.mutate(graph, args, orig_result)
             new_result = alg(new_graph, *new_args)

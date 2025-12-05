@@ -5,7 +5,7 @@ import networkx as nx
 
 from Utils.FileUtils import save_discrepancy
 from Utils.GraphConverter import GraphConverter
-from Tester.BaseTester import BaseTester, MetamorphicMutator
+from Tester.BaseTester import BaseTester, TestMetamorphism
 
 
 class SCCTesterAlgorithms:
@@ -39,34 +39,102 @@ class SCCTesterAlgorithms:
         )
 
 
-class SCCMetamorphicMutator(MetamorphicMutator):
+class SCCTestMetamorphism(TestMetamorphism):
     def mutate(
         self, graph: nx.Graph, input: Any, result: set[frozenset[int]]
     ) -> tuple[nx.Graph, Any, Callable[[set[frozenset[int]]], bool]]:
         if len(graph.nodes) == 0:
             return graph, input, (lambda _: True)
-        graph_mutated = self.add_edge_inside_component(graph, result)
-        checker = lambda res: (len(res) == len(result))
+
+        graph_mutated, expected_result = self.compose_methods(graph, result)
+        checker = lambda res: (len(res) == len(expected_result))
         return graph_mutated, input, checker
 
-    def add_edge_inside_component(self, graph: nx.DiGraph, result):
+    def compose_methods(
+        self, graph: nx.DiGraph, result: set[frozenset[int]], max_compositions=4
+    ):
+        n_compositions = random.randint(1, max_compositions)
+        all_methods = [
+            self.add_edge_inside_component,
+            self.remove_edge_between_components,
+            self.add_path_inside_component,
+            self.add_cycle_component,
+        ]
+        new_graph, new_result = graph, result
+        for _ in range(n_compositions):
+            method = random.choice(all_methods)
+            new_graph, new_result = method(new_graph, new_result)
+        return new_graph, new_result
+
+    def add_edge_inside_component(self, graph: nx.DiGraph, result: set[frozenset[int]]):
         component = list(random.choice(list(result)))
         start, end = (random.choice(component), random.choice(component))
         graph_mutated = graph.copy()
         graph_mutated.add_edge(start, end)
-        return graph_mutated
+        return graph_mutated, result
 
-    def remove_edge_between_components(self, graph, result):
+    def remove_edge_between_components(
+        self, graph: nx.DiGraph, result: set[frozenset[int]]
+    ):
         graph_mutated = graph.copy()
         for _ in range(100):
-            out_component = random.choice(result)
+            out_component = random.choice(list(result))
             start_node = random.choice(list(out_component))
+            if len(graph.edges(start_node)) == 0:
+                continue
             edge = random.choice(list(graph.edges(start_node)))
             if edge[1] in out_component:
                 continue
             graph_mutated.remove_edge(edge[0], edge[1])
-            return graph_mutated
-        return graph_mutated
+            return graph_mutated, result
+        return graph_mutated, result
+
+    def add_path_inside_component(
+        self, graph: nx.DiGraph, result: set[frozenset[int]], max_vertices=5
+    ):
+        graph_mutated = graph.copy()
+        component = random.choice(list(result))
+        start, end = (random.choice(list(component)), random.choice(list(component)))
+
+        n_new_nodes = random.randint(1, max_vertices)
+        new_nodes = [max(graph.nodes) + 1 + i for i in range(n_new_nodes)]
+        graph_mutated.add_nodes_from(new_nodes)
+
+        path = [start] + new_nodes + [end]
+        graph_mutated.add_edges_from(
+            [(path[i - 1], path[i]) for i in range(1, len(path))]
+        )
+
+        new_result = result.copy()
+        new_result.remove(component)
+        new_result.add(component.union(new_nodes))
+        return graph_mutated, new_result
+
+    def add_cycle_component(
+        self, graph: nx.DiGraph, result: set[frozenset[int]], max_vertices=5
+    ):
+        graph_mutated = graph.copy()
+
+        n_new_nodes = random.randint(1, max_vertices)
+        new_nodes = [max(graph.nodes) + 1 + i for i in range(n_new_nodes)]
+        graph_mutated.add_nodes_from(new_nodes)
+        graph_mutated.add_edges_from(
+            [(new_nodes[i - 1], new_nodes[i]) for i in range(len(new_nodes))]
+        )
+
+        edge_prob = random.random()
+        edge_dir = random.randint(0, 1)
+        for node in graph.nodes:
+            if random.random() >= edge_prob:
+                continue
+            if edge_dir == 0:
+                graph_mutated.add_edge(node, random.choice(new_nodes))
+            else:
+                graph_mutated.add_edge(random.choice(new_nodes), node)
+
+        new_result = result.copy()
+        new_result.add(frozenset(new_nodes))
+        return graph_mutated, new_result
 
 
 class SCCTester(BaseTester):
@@ -83,5 +151,5 @@ class SCCTester(BaseTester):
         }
 
     @staticmethod
-    def get_metamorphic_mutator():
-        return SCCMetamorphicMutator()
+    def get_test_metamorphism():
+        return SCCTestMetamorphism()
