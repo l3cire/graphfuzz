@@ -59,6 +59,7 @@ class SCCTestMetamorphism(TestMetamorphism):
             self.remove_edge_between_components,
             self.add_path_inside_component,
             self.add_cycle_component,
+            self.add_isolated_node,
         ]
         new_graph, new_result = graph, result
         for _ in range(n_compositions):
@@ -108,6 +109,18 @@ class SCCTestMetamorphism(TestMetamorphism):
         new_result = result.copy()
         new_result.remove(component)
         new_result.add(component.union(new_nodes))
+        return graph_mutated, new_result
+
+    def add_isolated_node(self, graph: nx.DiGraph, result: set[frozenset[int]]):
+        graph_mutated = graph.copy()
+
+        # create a single new node id after current max
+        new_node = max(graph.nodes) + 1
+        graph_mutated.add_node(new_node)
+
+        new_result = result.copy()
+        # an isolated node is its own SCC
+        new_result.add(frozenset({new_node}))
         return graph_mutated, new_result
 
     def add_cycle_component(
