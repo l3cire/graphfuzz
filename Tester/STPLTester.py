@@ -1,4 +1,5 @@
 import random
+from typing import Any
 
 import networkx as nx
 
@@ -50,6 +51,139 @@ class STPLTesterAlgorithms:
             source=source_ig, target=target_ig, weights="weight"
         )
         return shortest_paths[0][0] if shortest_paths else float("inf")
+
+
+class STPLTestMetamorphism:
+    """Metamorphism implementations for shortest-path-length testing.
+
+    Each mutation returns (mutated_graph, new_args, checker) where
+    `new_args` are the (source, target) tuple and `checker` validates
+    the algorithm output on the mutated graph.
+    """
+
+    def _source_distances(self, graph: nx.Graph, source):
+        try:
+            # prefer Dijkstra when no negative weights
+            has_negative = any(
+                data.get("weight", 0) < 0 for _, _, data in graph.edges(data=True)
+            )
+            if has_negative:
+                # may raise if negative cycle present
+                return nx.single_source_bellman_ford_path_length(graph, source, weight="weight")
+            else:
+                return nx.single_source_dijkstra_path_length(graph, source, weight="weight")
+        except Exception:
+            return None
+
+    def mutate(self, graph: nx.Graph, input: Any, result: float):
+        print("start of mutate")
+        # input is tuple (source, target)
+        if not input:
+            return graph, input, (lambda _: True)
+        source, target = input
+
+        if len(graph) < 1:
+            return graph, input, (lambda _: True)
+
+        # compute source distances (dict) or bail out
+        dist = self._source_distances(graph, source)
+        if dist is None:
+            return graph, input, (lambda _: True)
+
+        methods = [
+            self._add_edge_distance_based,
+            self._split_edge,
+            self._scale_weights,
+            self._add_long_new_path,
+            self._add_short_new_path,
+        ]
+
+        method = random.choice(methods)
+        try:
+            print("mutating using", method.__name__)
+            return method(graph, source, target, dist, result)
+        except Exception:
+            # On any error, return no-op mutation
+            return graph, input, (lambda _: True)
+
+    def _add_edge_distance_based(self, graph, source, target, dist, orig_result):
+        # add random edge (u,v,w) where w = d(v)-d(u) or +1
+        graph_mut = graph.copy()
+        nodes = [n for n in graph.nodes if n in dist and dist[n] != float("inf")]
+        if len(nodes) < 2:
+            return graph, (source, target), (lambda new_res: orig_result == new_res)
+
+        for _ in range(50):
+            u = random.choice(nodes)
+            v = random.choice(nodes)
+            if u == v:
+                continue
+            du = dist.get(u, float("inf"))
+            dv = dist.get(v, float("inf"))
+            w_base = dv - du
+            w = w_base if random.random() < 0.5 else (w_base + 1)
+            graph_mut.add_edge(u, v, weight=w)
+            checker = lambda new_res: new_res == orig_result
+            return graph_mut, (source, target), checker
+
+        return graph, (source, target), (lambda new_res: orig_result == new_res)
+
+    def _split_edge(self, graph, source, target, dist, orig_result):
+        # pick existing edge (u,v,w) with weight >=1 and replace with u->a (1) and a->v (w-1)
+        graph_mut = graph.copy()
+        edges = list(graph.edges(data=True))
+        random.shuffle(edges)
+        for u, v, data in edges:
+            w = data.get("weight", 1)
+            if w >= 1:
+                new_node = max(graph.nodes) + 1
+                graph_mut.remove_edge(u, v)
+                graph_mut.add_node(new_node)
+                graph_mut.add_edge(u, new_node, weight=1)
+                graph_mut.add_edge(new_node, v, weight=w - 1)
+                checker = lambda new_res: new_res == orig_result
+                return graph_mut, (source, target), checker
+
+        return graph, (source, target), (lambda _: True)
+
+    def _scale_weights(self, graph, source, target, dist, orig_result):
+        # multiply all weights by positive constant k
+        graph_mut = graph.copy()
+        # pick k from reasonable set
+        ks = [2, 3, 4]
+        k = random.choice(ks)
+        for u, v, data in graph_mut.edges(data=True):
+            data["weight"] = data.get("weight", 1) * k
+
+        def checker(new_res):
+            if orig_result in (float("inf"), float("-inf"), float("nan")):
+                return new_res == orig_result
+            return new_res == k * orig_result
+
+        return graph_mut, (source, target), checker
+
+    def _add_long_new_path(self, graph, source, target, dist, orig_result):
+        # Add path source -> ... -> target composed of new nodes whose total length > orig_result
+        graph_mut = graph.copy()
+        # create new nodes
+        new_node = max(graph.nodes) + 1
+        graph_mut.add_node(new_node)
+        graph_mut.add_edge(source, new_node, 1)
+        graph_mut.add_edge(new_node, target, dist+10)
+        checker = lambda new_res: new_res == orig_result
+        return graph_mut, (source, target), checker
+
+    def _add_short_new_path(self, graph, source, target, dist, orig_result):
+        # Add path composed of new nodes with total length smaller than orig_result
+        graph_mut = graph.copy()
+        # create new nodes
+        new_node = max(graph.nodes) + 1
+        graph_mut.add_node(new_node)
+        graph_mut.add_edge(source, new_node, 1)
+        graph_mut.add_edge(new_node, target, dist / 2)
+        checker = lambda new_res: new_res == dist / 2
+        return graph_mut, (source, target), checker
+
 
 
 class STPLTester(BaseTester):
@@ -159,3 +293,7 @@ class STPLTester(BaseTester):
 
         print("End of STPL testing.")
         return discrepancy_counts
+
+    @staticmethod
+    def get_test_metamorphism() -> Any:
+        return STPLTestMetamorphism()
