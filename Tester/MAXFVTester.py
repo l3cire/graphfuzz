@@ -10,7 +10,7 @@ from networkx.algorithms.flow import (
     preflow_push,
 )
 
-from Tester.BaseTester import BaseTester
+from Tester.BaseTester import BaseTester, TestMetamorphism
 from Utils.FileUtils import save_discrepancies, save_discrepancy
 from Utils.GraphConverter import GraphConverter
 
@@ -59,6 +59,64 @@ class MAXFVTesterAlgorithms:
         return G_ig.maxflow(source_ig, target_ig, capacity="weight").value
 
 
+class MAXFVTestMetramorphism(TestMetamorphism):
+    def mutate(
+        self, graph: nx.Graph, input: tuple[int, int], result: int
+    ) -> tuple[nx.Graph, tuple[int, int], Callable[[int], bool]]:
+        if len(graph.nodes) <= 1:
+            return graph, input, (lambda _: True)
+        graph_mutated, source, sink, exp_res = self.compose_methods(
+            graph, input[0], input[1], result
+        )
+        checker = lambda res: (res == exp_res)
+        return graph_mutated, (source, sink), checker
+
+    def compose_methods(
+        self, graph: nx.Graph, source: int, sink: int, result: int, max_compositions=4
+    ):
+        n_compositions = random.randint(1, max_compositions)
+        all_methods = [
+            self.add_source_sink_link,
+            self.add_endpoint_node,
+            self.swap_source_sink,
+        ]
+        new_graph, new_source, new_sink, new_result = graph, source, sink, result
+        for _ in range(n_compositions):
+            method = random.choice(all_methods)
+            new_graph, new_source, new_sink, new_result = method(
+                new_graph, new_source, new_sink, new_result
+            )
+        return new_graph, new_source, new_sink, new_result
+
+    def add_source_sink_link(
+        self, graph: nx.Graph, source: int, sink: int, result: int, max_weight=10
+    ):
+        if graph.has_edge(source, sink):
+            return graph, source, sink, result
+
+        weight = random.randint(1, max_weight)
+        new_graph = graph.copy()
+        new_graph.add_edge(source, sink, weight=weight)
+        return new_graph, source, sink, result + weight
+
+    def add_endpoint_node(self, graph: nx.Graph, source: int, sink: int, result: int):
+        new_node = max(list(graph.nodes)) + 1
+        new_graph = graph.copy()
+        new_graph.add_node(new_node)
+        weight = random.randint(1, result + 1)
+        if random.choice([True, False]):
+            new_graph.add_edge(new_node, source, weight=weight)
+            return new_graph, new_node, sink, min(result, weight)
+        else:
+            new_graph.add_edge(sink, new_node, weight=weight)
+            return new_graph, source, new_node, min(result, weight)
+
+    def swap_source_sink(self, graph: nx.Graph, source: int, sink: int, result: int):
+        if graph.is_directed():
+            return graph.reverse(), sink, source, result
+        return graph, sink, source, result
+
+
 class MAXFVTester(BaseTester):
 
     def __init__(
@@ -73,6 +131,9 @@ class MAXFVTester(BaseTester):
             "preflow_push": MAXFVTesterAlgorithms.preflow_push,
             "igraph": MAXFVTesterAlgorithms.igraph,
         }
+
+    def get_test_metamorphism(self):
+        return MAXFVTestMetramorphism()
 
     def test(self, G, timestamp):
         return self.run_maxfv_tests_multiple_times(G, timestamp)
@@ -92,18 +153,9 @@ class MAXFVTester(BaseTester):
             while target == source:  # Ensure source and target are different
                 target = random.choice(nodes)
 
-            # Call the provided test function
-            discrepancy, graph = self.test_algorithms(G, source, target)
-
-            # If a discrepancy is found, add it to the dictionary
-            if discrepancy is not None:
-                # discrepancy_message = f"Source: {source}, Target: {target}, Discrepancy: {discrepancy}"
-                discrepancy_message = f"Discrepancy: {discrepancy}"
-                discrepancies[discrepancy_message] = graph
-                save_discrepancy(
-                    (discrepancy_message, graph, timestamp),
-                    f"maxfv_discrepancy_{self.uuid}.pkl",
-                )
+            discrepancies = super().test(G, timestamp, source, target)
+            if len(discrepancies) > 0:
+                return discrepancies
 
         return discrepancies
 

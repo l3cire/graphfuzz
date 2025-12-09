@@ -54,7 +54,7 @@ class MSTTestMetamorphism(TestMetamorphism):
         checker = lambda res: (res == expected_result)
         return graph_mutated, input, checker
 
-    def compose_methods(self, graph: nx.DiGraph, result: int, max_compositions=1):
+    def compose_methods(self, graph: nx.DiGraph, result: int, max_compositions=4):
         n_compositions = random.randint(1, max_compositions)
         all_methods = [
             self.add_node_single_edge,
