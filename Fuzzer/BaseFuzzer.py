@@ -123,6 +123,24 @@ class BaseFuzzer(ABC):
     def branch_coverage_feedback_check(self, mutated_graph):
         return self.feedback_tool.is_new_branch_triggered(mutated_graph, self.executor)
 
+    def path_hop_count_feedback_check(self, mutated_graph):
+        """Feedback based on the number of edges (hops) in the shortest path."""
+        # Use specialized executor if available, otherwise use default
+        executor = getattr(self, 'executor_hop_count', self.executor)
+        interesting_check = getattr(self, 'hop_count_interesting_check', self.interesting_check)
+        return self.feedback_tool.is_new_and_interesting(
+            mutated_graph, executor, interesting_check
+        )
+
+    def negative_edge_count_feedback_check(self, mutated_graph):
+        """Feedback based on the number of negative weight edges used in the result."""
+        # Use specialized executor if available, otherwise use default
+        executor = getattr(self, 'executor_negative_edges', self.executor)
+        interesting_check = getattr(self, 'negative_edge_interesting_check', self.interesting_check)
+        return self.feedback_tool.is_new_and_interesting(
+            mutated_graph, executor, interesting_check
+        )
+
     def perform_feedback_checks(self, mutated_graph):
         if self.feedback_check_type == "regular":
             return self.regular_feedback_check(mutated_graph)
@@ -134,6 +152,10 @@ class BaseFuzzer(ABC):
             return self.no_feedback_check(mutated_graph)
         elif self.feedback_check_type == "branch":
             return self.branch_coverage_feedback_check(mutated_graph)
+        elif self.feedback_check_type == "hop_count":
+            return self.path_hop_count_feedback_check(mutated_graph)
+        elif self.feedback_check_type == "negative_edges":
+            return self.negative_edge_count_feedback_check(mutated_graph)
         else:
             raise ValueError(f"Unknown feedback check type: {self.feedback_check_type}")
 
