@@ -1,10 +1,10 @@
 import math
 from typing import Callable, Any
+import random
 
 import networkx as nx
 
-from Tester.BaseTester import BaseTester
-from Utils.FileUtils import save_discrepancy
+from Tester.BaseTester import BaseTester, TestMetamorphism
 from Utils.GraphConverter import GraphConverter
 
 
@@ -35,6 +35,25 @@ class HarmonicCentralityTesterAlgorithms:
         }
 
 
+class HarmonicCentralityMetamorphism(TestMetamorphism):
+    def mutate(
+        self, graph: nx.Graph, input: Any, result: dict[int, float]
+    ) -> tuple[nx.Graph, Any, Callable[[dict[int, float]], bool]]:
+        scaling_factor = max(0.1, random.random() * 10)
+        new_graph = graph.copy()
+        for _, _, data in new_graph.edges(data=True):
+            data["weight"] = data.get("weight", 1) * scaling_factor
+
+        def check(res: dict[int, float]):
+            for node, value in result.items():
+                expected_result = value / scaling_factor
+                if abs(expected_result - res[node]) > 1e-3:
+                    return False
+            return True
+
+        return new_graph, input, check
+
+
 class HarmonicCentralityTester(BaseTester):
 
     def __init__(
@@ -45,6 +64,9 @@ class HarmonicCentralityTester(BaseTester):
             "networkx": HarmonicCentralityTesterAlgorithms.networkx,
             "igraph": HarmonicCentralityTesterAlgorithms.igraph,
         }
+
+    def get_test_metamorphism(self):
+        return HarmonicCentralityMetamorphism()
 
     def test_algorithms(self, G):
         """Test harmonic centrality between networkx and igraph."""
