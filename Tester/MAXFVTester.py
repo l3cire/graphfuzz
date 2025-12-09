@@ -113,7 +113,7 @@ class MAXFVTestMetramorphism(TestMetamorphism):
 
     def swap_source_sink(self, graph: nx.Graph, source: int, sink: int, result: int):
         if graph.is_directed():
-            return graph.reverse(), sink, source, result
+            return nx.reverse(graph), sink, source, result
         return graph, sink, source, result
 
 
