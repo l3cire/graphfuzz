@@ -56,6 +56,8 @@ Optional arguments:
   - `coverage`: Line coverage-based checks.
   - `combination`: Both `regular` and `coverage` checks.
   - `branch`: Branch coverage-based checks.
+  - `hop_count`: Track number of edges (hops) in shortest path (STPL-specific).
+  - `negative_edges`: Track count of negative weight edges in shortest path (STPL-specific).
   - `none`: Disable feedback checks.
 - `--scheduler <disk/mem>`: Choose the scheduler type:
   - `mem`: Use RandomMemScheduler to keep graphs in memory.

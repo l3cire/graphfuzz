@@ -99,13 +99,15 @@ def main():
     parser.add_argument(
         "--feedback_check_type",
         type=str,
-        choices=["regular", "coverage", "combination", "branch", "none"],
+        choices=["regular", "coverage", "combination", "branch", "hop_count", "negative_edges", "none"],
         default="regular",
         help="The type of feedback check to use: "
         "'regular' for standard checks, "
         "'coverage' for line coverage-based checks, "
         "'combination' for both regular and coverage, "
         "'branch' for branch coverage-based checks, "
+        "'hop_count' for hop count feedback (STPL-specific), "
+        "'negative_edges' for negative edge count feedback (STPL-specific), "
         "'none' to disable feedback checks.",
     )
     parser.add_argument(
