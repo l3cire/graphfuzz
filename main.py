@@ -99,7 +99,7 @@ def main():
     parser.add_argument(
         "--feedback_check_type",
         type=str,
-        choices=["regular", "coverage", "combination", "branch", "hop_count", "negative_edges", "component_distribution", "trivial_ratio", "none"],
+        choices=["regular", "coverage", "combination", "branch", "hop_count", "negative_edges", "component_distribution", "trivial_ratio", "saturated_edges", "max_degree", "none"],
         default="regular",
         help="The type of feedback check to use: "
         "'regular' for standard checks, "
@@ -110,6 +110,8 @@ def main():
         "'negative_edges' for negative edge count feedback (STPL-specific), "
         "'component_distribution' for component size distribution feedback (SCC-specific), "
         "'trivial_ratio' for singleton component ratio feedback (SCC-specific), "
+        "'saturated_edges' for saturated edge count feedback (MAXFV-specific), "
+        "'max_degree' for max degree in MST feedback (MST-specific), "
         "'none' to disable feedback checks.",
     )
     parser.add_argument(

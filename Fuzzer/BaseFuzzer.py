@@ -159,6 +159,24 @@ class BaseFuzzer(ABC):
             mutated_graph, executor, interesting_check
         )
 
+    def saturated_edges_feedback_check(self, mutated_graph):
+        """Feedback based on count of saturated edges in max flow (MAXFV-specific)."""
+        # Use specialized executor if available, otherwise use default
+        executor = getattr(self, 'executor_saturated_edges', self.executor)
+        interesting_check = getattr(self, 'saturated_edges_interesting_check', self.interesting_check)
+        return self.feedback_tool.is_new_and_interesting(
+            mutated_graph, executor, interesting_check
+        )
+
+    def max_degree_feedback_check(self, mutated_graph):
+        """Feedback based on maximum degree in MST (MST-specific)."""
+        # Use specialized executor if available, otherwise use default
+        executor = getattr(self, 'executor_max_degree', self.executor)
+        interesting_check = getattr(self, 'max_degree_interesting_check', self.interesting_check)
+        return self.feedback_tool.is_new_and_interesting(
+            mutated_graph, executor, interesting_check
+        )
+
     def perform_feedback_checks(self, mutated_graph):
         if self.feedback_check_type == "regular":
             return self.regular_feedback_check(mutated_graph)
@@ -178,6 +196,10 @@ class BaseFuzzer(ABC):
             return self.component_distribution_feedback_check(mutated_graph)
         elif self.feedback_check_type == "trivial_ratio":
             return self.trivial_ratio_feedback_check(mutated_graph)
+        elif self.feedback_check_type == "saturated_edges":
+            return self.saturated_edges_feedback_check(mutated_graph)
+        elif self.feedback_check_type == "max_degree":
+            return self.max_degree_feedback_check(mutated_graph)
         else:
             raise ValueError(f"Unknown feedback check type: {self.feedback_check_type}")
 

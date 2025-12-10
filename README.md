@@ -60,6 +60,8 @@ Optional arguments:
   - `negative_edges`: Track count of negative weight edges in shortest path (STPL-specific).
   - `component_distribution`: Track component size distribution pattern (SCC-specific).
   - `trivial_ratio`: Track ratio of singleton components (SCC-specific).
+  - `saturated_edges`: Track count of saturated edges in max flow (MAXFV-specific).
+  - `max_degree`: Track maximum degree in MST (MST-specific).
   - `none`: Disable feedback checks.
 - `--scheduler <disk/mem>`: Choose the scheduler type:
   - `mem`: Use RandomMemScheduler to keep graphs in memory.
