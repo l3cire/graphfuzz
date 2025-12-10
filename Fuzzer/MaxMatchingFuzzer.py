@@ -13,6 +13,8 @@ class MaxMatchingFuzzer(BaseFuzzer):
         return "max_matching_corpus"
 
     def executor(self, G):
+        if len(list(G.nodes)) <= 1 or not nx.is_connected(G) or not nx.is_bipartite(G):
+            return 0
         return nx.algorithms.bipartite.matching.hopcroft_karp_matching(G)
 
     def get_tester(self):
@@ -22,7 +24,7 @@ class MaxMatchingFuzzer(BaseFuzzer):
 
     def create_single_graph(self):
         generator = CustomGenerator(n=1, m=1, category="Bipartite")
-        return generator.create_single_graph()
+        return [generator.create_single_graph()]
 
     def create_multiple_graphs(self):
         generator = CustomGenerator(n=30, m=5, category="Bipartite")

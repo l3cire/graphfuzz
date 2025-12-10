@@ -1,25 +1,37 @@
 from typing import Callable, Any
+import random
 
 import networkx as nx
 
-from Tester.BaseTester import BaseTester
-from Utils.FileUtils import save_discrepancy
+from Tester.BaseTester import BaseTester, TestMetamorphism
 from Utils.GraphConverter import GraphConverter
 
 
 class MaxMatchingTesterAlgorithms:
     @staticmethod
+    def is_graph_supported(graph: nx.Graph) -> bool:
+        return (
+            (len(list(graph.nodes)) >= 2)
+            and nx.is_connected(graph)
+            and nx.is_bipartite(graph)
+        )
+
+    @staticmethod
     def hopcroft_karp(graph: nx.Graph):
+        if not MaxMatchingTesterAlgorithms.is_graph_supported(graph):
+            return 0
         return len(nx.algorithms.bipartite.matching.hopcroft_karp_matching(graph))
 
     @staticmethod
     def eppstein(graph: nx.Graph):
+        if not MaxMatchingTesterAlgorithms.is_graph_supported(graph):
+            return 0
         return len(nx.algorithms.bipartite.matching.eppstein_matching(graph))
 
     @staticmethod
     def igraph(graph: nx.Graph):
-        if not nx.is_bipartite(graph):
-            raise ValueError("Provided NetworkX graph is not bipartite")
+        if not MaxMatchingTesterAlgorithms.is_graph_supported(graph):
+            return 0
 
         # Get the two sets of the bipartite graph
         sets = nx.bipartite.sets(graph)
@@ -38,6 +50,25 @@ class MaxMatchingTesterAlgorithms:
         return matching_size
 
 
+class MaxMatchingMetamorphism(TestMetamorphism):
+    def mutate(
+        self, graph: nx.Graph, input: Any, result: int
+    ) -> tuple[nx.Graph, Any, Callable[[int], bool]]:
+        if not MaxMatchingTesterAlgorithms.is_graph_supported(graph):
+            return graph, input, lambda _: True
+        mutation_type = random.choice([0, 1])
+        new_graph = graph.copy()
+        if mutation_type == 0:
+            left, right = map(list, nx.bipartite.sets(new_graph))
+            u, v = random.choice(left), random.choice(right)
+            new_graph.add_edge(u, v)
+            return new_graph, input, lambda x: (x >= result)
+        elif mutation_type == 1:
+            u, v = random.choice(list(new_graph.edges))
+            new_graph.remove_edge(u, v)
+            return new_graph, input, lambda x: (x <= result)
+
+
 class MaxMatchingTester(BaseTester):
 
     def __init__(
@@ -53,3 +84,6 @@ class MaxMatchingTester(BaseTester):
             "eppstein": MaxMatchingTesterAlgorithms.eppstein,
             "igraph": MaxMatchingTesterAlgorithms.igraph,
         }
+
+    def get_test_metamorphism(self):
+        return MaxMatchingMetamorphism()
