@@ -43,7 +43,7 @@ pip install -r requirements.txt
 ### Executing the Fuzzer
 
 ```bash
-python3 main.py <fuzzer_name> --num_iterations <num_iterations> --use_multiple_graphs --feedback_check_type <feedback_check_type> --scheduler <disk/memory> --output <output_mode>
+python3 main.py <fuzzer_name> --num_iterations <num_iterations> --use_multiple_graphs --feedback_check_type <feedback_check_type> --scheduler <disk/memory> --output <output_mode> --test_method <test_method_name> --algorithm <algorithm>
 ```
 
 In this command, replace `<fuzzer_name>` with one of the available fuzzer names, for instance: `AdamicAdar`, `BCC`, `HarmonicCentrality`, `JaccardSimilarity`, `MAXFV`, `MaxMatching`, `MST`, `SCC`, `STPL`.
@@ -71,14 +71,16 @@ Optional arguments:
   - `file`: Save logs to a file.
   - `console`: Print logs to the console (default: `console`).
 - `--timeout <timeout>`: Set a timeout for each operation in seconds (default: 20 seconds).
+- `--test_method <test_method_name>`: test method to use; either `differential` or `metamorphic` (default: `differential`)
+- `--algorithm <algorithm_name>`: algorithm name to test, required if metamorphic testing is chosen. for each problem, algorithms are specified in its Tester class.
 
 Additionally, you can execute `python3 main.py -h` to view more details and options available for running the fuzzers.
 
 Example usage:
 ```bash
-python3 main.py SCC --num_iterations 100 --feedback_check_type regular --output file
+python3 main.py SCC --num_iterations 100 --feedback_check_type regular --output file --test_method differential
 
-python3 main.py SCC --num_iterations 100 --feedback_check_type coverage --output console --scheduler disk --folder ./graphs_folder
+python3 main.py SCC --num_iterations 100 --feedback_check_type coverage --output console --scheduler disk --folder ./graphs_folder --test_method metamorphic --algorithm kosaraju
 ```
 
 ### Logging
