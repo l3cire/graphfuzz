@@ -21,6 +21,26 @@ class MSTFuzzer(BaseFuzzer):
     def executor(self, G):
         return nx.minimum_spanning_tree(G)
 
+    def executor_max_degree(self, G):
+        """Executor that returns the maximum degree in the MST.
+
+        Different degree distributions reveal different MST structures:
+        - Star-shaped MSTs have one high-degree node
+        - Balanced MSTs have more uniform degrees
+        This exercises different structural properties of the algorithm.
+        """
+        mst = nx.minimum_spanning_tree(G)
+        if mst.number_of_nodes() == 0:
+            return 0
+        return max(degree for node, degree in mst.degree())
+
+    def max_degree_interesting_check(self, result):
+        """Check function for max degree feedback.
+
+        Result is already the maximum degree from executor_max_degree.
+        """
+        return result
+
     def get_tester(self):
         return MSTTester(
             self.corpus_path, test_method=self.test_method, algorithm=self.algorithm
