@@ -131,7 +131,6 @@ class STPLTestMetamorphism:
             return None
 
     def mutate(self, graph: nx.Graph, input: Any, result: float):
-        print("start of mutate")
         # input is tuple (source, target)
         if not input:
             return graph, input, (lambda _: True)
@@ -163,7 +162,6 @@ class STPLTestMetamorphism:
 
         method = random.choice(methods)
         try:
-            print("mutating using", method.__name__)
             return method(graph, source, target, dist, result)
         except Exception as e:
             # On any error, return no-op mutation
@@ -185,6 +183,8 @@ class STPLTestMetamorphism:
             u = random.choice(nodes)
             v = random.choice(nodes)
             if u == v:
+                continue
+            if graph_mut.has_edge(u, v):
                 continue
             du = dist.get(u, float("inf"))
             dv = dist.get(v, float("inf"))
@@ -338,7 +338,19 @@ class STPLTester(BaseTester):
             # source, target = sorted_nodes[:2]
             source, target = random.sample(list(G.nodes()), 2)
 
-            discrepancy_msg, discrepancy_graph = self.test_algorithms(G, source, target)
+            # Respect test_method parameter
+            if self.test_method == "differential":
+                discrepancy_msg, discrepancy_graph = self.test_algorithms(G, source, target)
+            elif self.test_method == "metamorphic":
+                alg = self.algorithms.get(self.algorithm, None)
+                if alg is None:
+                    message = f"Incorrect algorithm name provided: {self.algorithm}"
+                    return {message: G}
+                discrepancy_msg, discrepancy_graph = self.test_metamorphic(
+                    G, alg, source, target
+                )
+            else:
+                raise ValueError(f"Unknown test_method: {self.test_method}")
 
             if discrepancy_msg and len(G.nodes()) < 20:
                 save_discrepancy(

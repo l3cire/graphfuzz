@@ -76,9 +76,9 @@ class BaseTester(ABC):
             new_result = alg(new_graph, *new_args)
             if not checker(new_result):
                 discrepancy_msg = (
-                    f"Resutls for a graph and its mutation are inconsistent!"
+                    f"Results for a graph and its mutation are inconsistent!"
                 )
-                return (discrepancy_msg, graph)
+                return (discrepancy_msg, (graph, args, new_graph, new_args))
         return None, None
 
     def test_algorithms(
