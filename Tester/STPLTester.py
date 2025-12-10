@@ -21,9 +21,9 @@ class STPLTesterAlgorithms:
             return nx.bellman_ford_path_length(
                 graph, source=source, target=target, weight="weight"
             )
-        except nx.NetworkXNoPath:
+        except (nx.NetworkXNoPath, nx.NetworkXError):
             return float("inf")
-        except (nx.NetworkXError, nx.NetworkXUnbounded):
+        except (nx.NetworkXUnbounded):
             # Negative cycle exists
             return float("-inf")
 
@@ -43,7 +43,9 @@ class STPLTesterAlgorithms:
         try:
             _, dist = nx.goldberg_radzik(graph, source, weight="weight")
             return dist.get(target, float("inf"))
-        except (nx.NetworkXError, nx.NetworkXUnbounded):
+        except nx.NetworkXError:
+            return float("inf")
+        except nx.NetworkXUnbounded:
             # Negative cycle exists
             return float("-inf")
 
@@ -65,9 +67,38 @@ class STPLTesterAlgorithms:
             graph_ig = converter.to_igraph()
             source_ig = graph_ig.vs.find(name=str(source)).index
             target_ig = graph_ig.vs.find(name=str(target)).index
+            # Sanitize edge weights to avoid passing NaN or non-numeric
+            # values into igraph C code (which aborts on NaN).
+            try:
+                raw_weights = graph_ig.es['weight'] if 'weight' in graph_ig.es.attribute_names() else None
+            except Exception:
+                raw_weights = None
+
+            weights = None
+            if raw_weights is not None:
+                clean = []
+                import math
+                for w in raw_weights:
+                    # If weight is a list (from consolidated multiedges), pick the minimum
+                    if isinstance(w, (list, tuple)) and len(w) > 0:
+                        try:
+                            nums = [float(x) for x in w]
+                            val = min(nums)
+                        except Exception:
+                            val = 1.0
+                    else:
+                        try:
+                            val = float(w)
+                        except Exception:
+                            val = 1.0
+                    # Replace NaN with a large finite weight (treat as effectively absent)
+                    if math.isnan(val):
+                        val = float('1e300')
+                    clean.append(val)
+                weights = clean
 
             shortest_paths = graph_ig.shortest_paths(
-                source=source_ig, target=target_ig, weights="weight"
+                source=source_ig, target=target_ig, weights=weights if weights is not None else "weight"
             )
             result = shortest_paths[0][0] if shortest_paths else float("inf")
             # igraph returns inf for no path
@@ -160,6 +191,8 @@ class STPLTestMetamorphism:
             if du == float("inf") or dv == float("inf"):
                 continue
             w_base = dv - du
+            if not graph.is_directed():
+                w_base = abs(w_base)
             w = w_base if random.random() < 0.5 else (w_base + 1)
             graph_mut.add_edge(u, v, weight=w)
             # The checker needs to handle inf and -inf properly
