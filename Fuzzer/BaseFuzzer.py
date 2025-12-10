@@ -141,6 +141,24 @@ class BaseFuzzer(ABC):
             mutated_graph, executor, interesting_check
         )
 
+    def component_distribution_feedback_check(self, mutated_graph):
+        """Feedback based on component size distribution pattern (SCC-specific)."""
+        # Use specialized executor if available, otherwise use default
+        executor = getattr(self, 'executor_component_distribution', self.executor)
+        interesting_check = getattr(self, 'component_distribution_interesting_check', self.interesting_check)
+        return self.feedback_tool.is_new_and_interesting(
+            mutated_graph, executor, interesting_check
+        )
+
+    def trivial_ratio_feedback_check(self, mutated_graph):
+        """Feedback based on ratio of singleton components (SCC-specific)."""
+        # Use specialized executor if available, otherwise use default
+        executor = getattr(self, 'executor_trivial_ratio', self.executor)
+        interesting_check = getattr(self, 'trivial_ratio_interesting_check', self.interesting_check)
+        return self.feedback_tool.is_new_and_interesting(
+            mutated_graph, executor, interesting_check
+        )
+
     def perform_feedback_checks(self, mutated_graph):
         if self.feedback_check_type == "regular":
             return self.regular_feedback_check(mutated_graph)
@@ -156,6 +174,10 @@ class BaseFuzzer(ABC):
             return self.path_hop_count_feedback_check(mutated_graph)
         elif self.feedback_check_type == "negative_edges":
             return self.negative_edge_count_feedback_check(mutated_graph)
+        elif self.feedback_check_type == "component_distribution":
+            return self.component_distribution_feedback_check(mutated_graph)
+        elif self.feedback_check_type == "trivial_ratio":
+            return self.trivial_ratio_feedback_check(mutated_graph)
         else:
             raise ValueError(f"Unknown feedback check type: {self.feedback_check_type}")
 
